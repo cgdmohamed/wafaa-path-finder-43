@@ -1,27 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, FileText, MessageSquare, Plus, Scale, User, TrendingUp } from 'lucide-react';
+import { Calendar, FileText, MessageSquare, Scale, Plus, Clock, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { SkeletonCard } from '@/components/ui/skeleton-layouts';
-import { Link } from 'react-router-dom';
 
 interface DashboardStats {
   appointments: number;
   cases: number;
   documents: number;
   messages: number;
-}
-
-interface RecentActivity {
-  id: string;
-  type: 'appointment' | 'case' | 'document' | 'message';
-  title: string;
-  date: string;
-  status?: string;
 }
 
 const DashboardHome = () => {
@@ -31,127 +21,58 @@ const DashboardHome = () => {
     documents: 0,
     messages: 0
   });
-  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchDashboardStats();
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardStats = async () => {
     try {
-      const user = await supabase.auth.getUser();
-      if (!user.data.user) return;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-      // Fetch stats
-      const [appointmentsResult, casesResult, documentsResult, messagesResult] = await Promise.all([
-        supabase.from('appointments').select('id', { count: 'exact' }).eq('client_id', user.data.user.id),
-        supabase.from('cases').select('id', { count: 'exact' }).eq('client_id', user.data.user.id),
-        supabase.from('documents').select('id', { count: 'exact' }).eq('uploaded_by', user.data.user.id),
-        supabase.from('contact_messages').select('id', { count: 'exact' }).eq('sender_id', user.data.user.id)
-      ]);
+      // Fetch appointments count
+      const { count: appointmentsCount } = await supabase
+        .from('appointments')
+        .select('*', { count: 'exact', head: true })
+        .eq('client_id', user.id);
+
+      // Fetch cases count
+      const { count: casesCount } = await supabase
+        .from('cases')
+        .select('*', { count: 'exact', head: true })
+        .eq('client_id', user.id);
+
+      // Fetch documents count
+      const { count: documentsCount } = await supabase
+        .from('documents')
+        .select('*', { count: 'exact', head: true })
+        .eq('uploaded_by', user.id);
+
+      // Fetch messages count
+      const { count: messagesCount } = await supabase
+        .from('contact_messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('sender_id', user.id);
 
       setStats({
-        appointments: appointmentsResult.count || 0,
-        cases: casesResult.count || 0,
-        documents: documentsResult.count || 0,
-        messages: messagesResult.count || 0
+        appointments: appointmentsCount || 0,
+        cases: casesCount || 0,
+        documents: documentsCount || 0,
+        messages: messagesCount || 0
       });
-
-      // Fetch recent activity
-      const { data: recentAppointments } = await supabase
-        .from('appointments')
-        .select('id, subject, scheduled_date, status')
-        .eq('client_id', user.data.user.id)
-        .order('created_at', { ascending: false })
-        .limit(3);
-
-      const { data: recentCases } = await supabase
-        .from('cases')
-        .select('id, title, created_at, status')
-        .eq('client_id', user.data.user.id)
-        .order('created_at', { ascending: false })
-        .limit(3);
-
-      const activity: RecentActivity[] = [];
-      
-      recentAppointments?.forEach(appointment => {
-        activity.push({
-          id: appointment.id,
-          type: 'appointment',
-          title: appointment.subject,
-          date: appointment.scheduled_date,
-          status: appointment.status
-        });
-      });
-
-      recentCases?.forEach(case_ => {
-        activity.push({
-          id: case_.id,
-          type: 'case',
-          title: case_.title,
-          date: case_.created_at,
-          status: case_.status
-        });
-      });
-
-      // Sort by date descending
-      activity.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      setRecentActivity(activity.slice(0, 5));
-
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error('Error fetching dashboard stats:', error);
       toast({
-        title: "خطأ في تحميل البيانات",
-        description: "حدث خطأ أثناء تحميل بيانات اللوحة",
+        title: "خطأ في تحميل الإحصائيات",
+        description: "حدث خطأ أثناء تحميل بيانات لوحة التحكم",
         variant: "destructive"
       });
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'appointment': return Calendar;
-      case 'case': return Scale;
-      case 'document': return FileText;
-      case 'message': return MessageSquare;
-      default: return FileText;
-    }
-  };
-
-  const getActivityColor = (type: string) => {
-    switch (type) {
-      case 'appointment': return 'text-blue-600';
-      case 'case': return 'text-purple-600';
-      case 'document': return 'text-green-600';
-      case 'message': return 'text-orange-600';
-      default: return 'text-gray-600';
-    }
-  };
-
-  const getStatusBadge = (status?: string) => {
-    if (!status) return null;
-    
-    const statusMap: Record<string, { label: string; variant: "default" | "destructive" | "outline" | "secondary" }> = {
-      'pending': { label: 'في الانتظار', variant: 'secondary' },
-      'confirmed': { label: 'مؤكد', variant: 'default' },
-      'completed': { label: 'مكتمل', variant: 'outline' },
-      'cancelled': { label: 'ملغي', variant: 'destructive' },
-      'initial': { label: 'مبدئي', variant: 'secondary' },
-      'in_progress': { label: 'قيد المعالجة', variant: 'default' },
-      'closed': { label: 'مغلق', variant: 'outline' }
-    };
-
-    const statusInfo = statusMap[status] || { label: status, variant: 'secondary' as const };
-    
-    return (
-      <Badge variant={statusInfo.variant} className="text-xs">
-        {statusInfo.label}
-      </Badge>
-    );
   };
 
   if (isLoading) {
@@ -167,13 +88,13 @@ const DashboardHome = () => {
         
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <SkeletonCard key={i} />
+            <SkeletonCard key={i} lines={2} />
           ))}
         </div>
         
         <div className="grid gap-6 md:grid-cols-2">
-          <SkeletonCard lines={5} />
-          <SkeletonCard lines={5} />
+          <SkeletonCard lines={4} />
+          <SkeletonCard lines={4} />
         </div>
       </div>
     );
@@ -188,15 +109,13 @@ const DashboardHome = () => {
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
-
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">مرحباً بك</h1>
-          <p className="text-muted-foreground">نظرة عامة على حالتك والخدمات المتاحة</p>
-        </div>
+      
+      <div>
+        <h1 className="text-3xl font-bold">مرحباً بك</h1>
+        <p className="text-muted-foreground">نظرة عامة على حسابك وخدماتك</p>
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -206,13 +125,11 @@ const DashboardHome = () => {
           <CardContent>
             <div className="text-2xl font-bold">{stats.appointments}</div>
             <p className="text-xs text-muted-foreground">
-              <Link to="/dashboard/appointments" className="text-primary hover:underline">
-                عرض جميع المواعيد
-              </Link>
+              المواعيد المحجوزة
             </p>
           </CardContent>
         </Card>
-
+        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">القضايا</CardTitle>
@@ -221,13 +138,11 @@ const DashboardHome = () => {
           <CardContent>
             <div className="text-2xl font-bold">{stats.cases}</div>
             <p className="text-xs text-muted-foreground">
-              <Link to="/dashboard/cases" className="text-primary hover:underline">
-                عرض جميع القضايا
-              </Link>
+              القضايا المفتوحة
             </p>
           </CardContent>
         </Card>
-
+        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">المستندات</CardTitle>
@@ -236,13 +151,11 @@ const DashboardHome = () => {
           <CardContent>
             <div className="text-2xl font-bold">{stats.documents}</div>
             <p className="text-xs text-muted-foreground">
-              <Link to="/dashboard/documents" className="text-primary hover:underline">
-                عرض جميع المستندات
-              </Link>
+              المستندات المرفوعة
             </p>
           </CardContent>
         </Card>
-
+        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">الرسائل</CardTitle>
@@ -251,87 +164,74 @@ const DashboardHome = () => {
           <CardContent>
             <div className="text-2xl font-bold">{stats.messages}</div>
             <p className="text-xs text-muted-foreground">
-              <Link to="/dashboard/messages" className="text-primary hover:underline">
-                عرض جميع الرسائل
-              </Link>
+              الرسائل المرسلة
             </p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Quick Actions and Recent Activity */}
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Quick Actions */}
         <Card>
           <CardHeader>
             <CardTitle>إجراءات سريعة</CardTitle>
-            <CardDescription>الخدمات الأكثر استخداماً</CardDescription>
+            <CardDescription>
+              الإجراءات الأكثر استخداماً
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <Link to="/dashboard/appointments/new">
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <Calendar className="w-4 h-4" />
-                حجز موعد جديد
-              </Button>
-            </Link>
-            <Link to="/dashboard/requests/new">
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <Plus className="w-4 h-4" />
-                طلب خدمة جديدة
-              </Button>
-            </Link>
-            <Link to="/dashboard/documents">
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <FileText className="w-4 h-4" />
-                رفع مستند
-              </Button>
-            </Link>
-            <Link to="/dashboard/messages">
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <MessageSquare className="w-4 h-4" />
-                إرسال رسالة
-              </Button>
-            </Link>
+          <CardContent className="grid gap-4">
+            <Button className="w-full justify-start gap-2" size="lg">
+              <Calendar className="w-4 h-4" />
+              حجز موعد جديد
+            </Button>
+            <Button className="w-full justify-start gap-2" size="lg" variant="outline">
+              <Plus className="w-4 h-4" />
+              طلب خدمة جديدة
+            </Button>
+            <Button className="w-full justify-start gap-2" size="lg" variant="outline">
+              <FileText className="w-4 h-4" />
+              رفع مستند
+            </Button>
+            <Button className="w-full justify-start gap-2" size="lg" variant="outline">
+              <MessageSquare className="w-4 h-4" />
+              إرسال رسالة
+            </Button>
           </CardContent>
         </Card>
 
-        {/* Recent Activity */}
         <Card>
           <CardHeader>
             <CardTitle>النشاط الأخير</CardTitle>
-            <CardDescription>آخر التحديثات والأنشطة</CardDescription>
+            <CardDescription>
+              آخر التحديثات على حسابك
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            {recentActivity.length === 0 ? (
-              <div className="text-center py-8">
-                <TrendingUp className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">لا يوجد نشاط حديث</p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  ابدئي بحجز موعد أو طلب خدمة جديدة
+          <CardContent className="space-y-4">
+            <div className="flex items-center space-x-4 rtl:space-x-reverse">
+              <Clock className="w-4 h-4 text-muted-foreground" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium">تم إنشاء الحساب</p>
+                <p className="text-xs text-muted-foreground">
+                  مرحباً بك في جمعية وفاء للحقوق النسائية
                 </p>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {recentActivity.map((activity) => {
-                  const IconComponent = getActivityIcon(activity.type);
-                  return (
-                    <div key={activity.id} className="flex items-start space-x-4 rtl:space-x-reverse">
-                      <div className={`p-2 rounded-full bg-secondary/20 ${getActivityColor(activity.type)}`}>
-                        <IconComponent className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <p className="text-sm font-medium leading-none">{activity.title}</p>
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(activity.date).toLocaleDateString('ar')}
-                          </p>
-                          {getStatusBadge(activity.status)}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+            </div>
+            
+            <div className="flex items-center space-x-4 rtl:space-x-reverse">
+              <User className="w-4 h-4 text-muted-foreground" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium">أكملي ملفك الشخصي</p>
+                <p className="text-xs text-muted-foreground">
+                  أضيفي معلوماتك لتحصلي على خدمة أفضل
+                </p>
               </div>
-            )}
+            </div>
+            
+            <div className="pt-2">
+              <Button variant="link" size="sm" className="h-auto p-0">
+                عرض جميع الأنشطة ←
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

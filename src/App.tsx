@@ -9,7 +9,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthPage from "./components/Auth/AuthPage";
 import DashboardLayout from "./components/Dashboard/DashboardLayout";
-import DashboardHome from "./components/Dashboard/DashboardHome";
+import DashboardHome from "./pages/dashboard/DashboardHome";
 import AppointmentBooking from "./components/Dashboard/AppointmentBooking";
 import AdminDashboard from "./components/Dashboard/AdminDashboard";
 import RequestsPage from "./pages/dashboard/RequestsPage";
