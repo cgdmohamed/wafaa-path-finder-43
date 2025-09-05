@@ -50,17 +50,23 @@ const Hero = () => {
               <Button 
                 size="lg" 
                 className="bg-gradient-to-r from-primary to-primary-light hover:from-primary-dark hover:to-primary text-lg px-8 py-6 gap-3 shadow-lg hover:shadow-xl transition-all"
+                asChild
               >
-                ابدئي رحلة العدالة
-                <ArrowLeft className="w-5 h-5" />
+                <a href="/auth">
+                  ابدئي رحلة العدالة
+                  <ArrowLeft className="w-5 h-5" />
+                </a>
               </Button>
               <Button 
                 variant="outline" 
                 size="lg" 
                 className="text-lg px-8 py-6 gap-3 border-primary hover:bg-primary hover:text-primary-foreground"
+                asChild
               >
-                استشارة عاجلة
-                <MessageCircle className="w-5 h-5" />
+                <a href="/auth">
+                  استشارة عاجلة
+                  <MessageCircle className="w-5 h-5" />
+                </a>
               </Button>
             </div>
           </div>

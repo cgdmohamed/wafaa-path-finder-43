@@ -44,13 +44,17 @@ const Header = () => {
 
           {/* أزرار التواصل السريع */}
           <div className="hidden md:flex items-center space-x-4 rtl:space-x-reverse">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Phone className="w-4 h-4" />
-              اتصل بنا
+            <Button variant="outline" size="sm" className="gap-2" asChild>
+              <a href="#contact">
+                <Phone className="w-4 h-4" />
+                اتصل بنا
+              </a>
             </Button>
-            <Button size="sm" className="gap-2 bg-gradient-to-r from-primary to-primary-light hover:from-primary-dark hover:to-primary">
-              <MessageCircle className="w-4 h-4" />
-              استشارة فورية
+            <Button size="sm" className="gap-2 bg-gradient-to-r from-primary to-primary-light hover:from-primary-dark hover:to-primary" asChild>
+              <a href="/auth">
+                <MessageCircle className="w-4 h-4" />
+                استشارة فورية
+              </a>
             </Button>
           </div>
 
@@ -78,13 +82,17 @@ const Header = () => {
                 </a>
               ))}
               <div className="flex flex-col space-y-2 pt-4 border-t border-border">
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Phone className="w-4 h-4" />
-                  اتصل بنا
+                <Button variant="outline" size="sm" className="gap-2" asChild>
+                  <a href="#contact">
+                    <Phone className="w-4 h-4" />
+                    اتصل بنا
+                  </a>
                 </Button>
-                <Button size="sm" className="gap-2 bg-gradient-to-r from-primary to-primary-light">
-                  <MessageCircle className="w-4 h-4" />
-                  استشارة فورية
+                <Button size="sm" className="gap-2 bg-gradient-to-r from-primary to-primary-light" asChild>
+                  <a href="/auth">
+                    <MessageCircle className="w-4 h-4" />
+                    استشارة فورية
+                  </a>
                 </Button>
               </div>
             </nav>
