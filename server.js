@@ -20,7 +20,7 @@ if (!fs.existsSync(distPath)) {
 app.use(express.static(distPath));
 
 // Handle React routing, return all requests to React app
-app.get('*', (req, res) => {
+app.get('/*', (req, res) => {
   const indexPath = path.join(distPath, 'index.html');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
