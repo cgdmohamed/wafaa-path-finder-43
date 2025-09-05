@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Shield, 
   AlertTriangle, 
@@ -15,8 +16,81 @@ import {
   RefreshCw,
   Download
 } from 'lucide-react';
+import { useSecurityData } from '@/hooks/useAdminData';
+import { formatDistanceToNow } from 'date-fns';
+import { ar } from 'date-fns/locale';
 
 const SecurityManagement = () => {
+  const { auditLogs, securityReports, isLoading, error, refetch } = useSecurityData();
+
+  const formatFileSize = (bytes: number) => {
+    const mb = bytes / (1024 * 1024);
+    return `${mb.toFixed(1)} MB`;
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'success':
+        return <div className="w-2 h-2 bg-green-500 rounded-full"></div>;
+      case 'failed':
+        return <div className="w-2 h-2 bg-red-500 rounded-full"></div>;
+      default:
+        return <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>;
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'success':
+        return <Badge variant="default">نجح</Badge>;
+      case 'failed':
+        return <Badge variant="destructive">فشل</Badge>;
+      default:
+        return <Badge variant="secondary">جاري</Badge>;
+    }
+  };
+
+  const failedLogins = auditLogs.filter(log => 
+    log.action === 'login' && log.status === 'failed'
+  );
+
+  const recentFailedLogins = failedLogins.filter(log => 
+    new Date(log.createdAt) > new Date(Date.now() - 24 * 60 * 60 * 1000)
+  );
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Shield className="w-8 h-8 text-primary" />
+              إدارة الأمان
+            </h1>
+            <p className="text-muted-foreground">مراقبة الأمان وإدارة الصلاحيات</p>
+          </div>
+          <Button variant="outline" className="gap-2" onClick={refetch}>
+            <RefreshCw className="w-4 h-4" />
+            تحديث البيانات
+          </Button>
+        </div>
+        
+        <Card>
+          <CardContent className="flex items-center justify-center py-12">
+            <div className="text-center space-y-4">
+              <AlertTriangle className="w-12 h-12 text-destructive mx-auto" />
+              <div>
+                <h3 className="text-lg font-semibold">خطأ في تحميل البيانات</h3>
+                <p className="text-muted-foreground">{error}</p>
+              </div>
+              <Button onClick={refetch}>إعادة المحاولة</Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -27,8 +101,8 @@ const SecurityManagement = () => {
           </h1>
           <p className="text-muted-foreground">مراقبة الأمان وإدارة الصلاحيات</p>
         </div>
-        <Button variant="outline" className="gap-2">
-          <RefreshCw className="w-4 h-4" />
+        <Button variant="outline" className="gap-2" onClick={refetch} disabled={isLoading}>
+          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           تحديث البيانات
         </Button>
       </div>
@@ -38,11 +112,15 @@ const SecurityManagement = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">حالة النظام</CardTitle>
-            <Shield className="h-4 w-4 text-green-600" />
+            <Shield className={`h-4 w-4 ${recentFailedLogins.length > 10 ? 'text-yellow-600' : 'text-green-600'}`} />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">آمن</div>
-            <p className="text-xs text-muted-foreground">جميع الأنظمة تعمل بشكل طبيعي</p>
+            <div className={`text-2xl font-bold ${recentFailedLogins.length > 10 ? 'text-yellow-600' : 'text-green-600'}`}>
+              {recentFailedLogins.length > 10 ? 'تحذير' : 'آمن'}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {recentFailedLogins.length > 10 ? 'مراقبة محاولات الدخول' : 'جميع الأنظمة تعمل بشكل طبيعي'}
+            </p>
           </CardContent>
         </Card>
 
@@ -52,89 +130,104 @@ const SecurityManagement = () => {
             <AlertTriangle className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
+            {isLoading ? (
+              <Skeleton className="h-8 w-16" />
+            ) : (
+              <div className="text-2xl font-bold">{recentFailedLogins.length}</div>
+            )}
             <p className="text-xs text-muted-foreground">في آخر 24 ساعة</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">الجلسات النشطة</CardTitle>
+            <CardTitle className="text-sm font-medium">إجمالي السجلات</CardTitle>
             <UserCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">47</div>
-            <p className="text-xs text-muted-foreground">مستخدم متصل حالياً</p>
+            {isLoading ? (
+              <Skeleton className="h-8 w-16" />
+            ) : (
+              <div className="text-2xl font-bold">{auditLogs.length}</div>
+            )}
+            <p className="text-xs text-muted-foreground">سجل مراجعة</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">آخر مراجعة أمنية</CardTitle>
+            <CardTitle className="text-sm font-medium">التقارير الأمنية</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2h</div>
-            <p className="text-xs text-muted-foreground">منذ ساعتين</p>
+            {isLoading ? (
+              <Skeleton className="h-8 w-16" />
+            ) : (
+              <div className="text-2xl font-bold">{securityReports.length}</div>
+            )}
+            <p className="text-xs text-muted-foreground">تقرير متاح</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Security Alerts */}
+      {/* Recent Security Alerts */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5" />
-            تنبيهات الأمان
+            تنبيهات الأمان الحديثة
           </CardTitle>
-          <CardDescription>التنبيهات والمشاكل الأمنية الحديثة</CardDescription>
+          <CardDescription>التنبيهات المستندة إلى سجلات المراجعة</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {[
-              { 
-                type: 'warning', 
-                title: 'محاولات دخول مشبوهة', 
-                description: 'تم رصد 5 محاولات دخول فاشلة من نفس عنوان IP',
-                time: 'منذ 15 دقيقة',
-                action: 'حظر IP'
-              },
-              { 
-                type: 'info', 
-                title: 'تحديث أمني متاح', 
-                description: 'يتوفر تحديث أمني لنظام إدارة البيانات',
-                time: 'منذ ساعة',
-                action: 'تطبيق التحديث'
-              },
-              { 
-                type: 'success', 
-                title: 'مراجعة أمنية مكتملة', 
-                description: 'تمت المراجعة الأمنية الدورية بنجاح',
-                time: 'منذ ساعتين',
-                action: 'عرض التقرير'
-              }
-            ].map((alert, index) => (
-              <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  {alert.type === 'warning' && <AlertTriangle className="w-5 h-5 text-yellow-500" />}
-                  {alert.type === 'info' && <Shield className="w-5 h-5 text-blue-500" />}
-                  {alert.type === 'success' && <CheckCircle className="w-5 h-5 text-green-500" />}
-                  <div>
-                    <p className="font-medium">{alert.title}</p>
-                    <p className="text-sm text-muted-foreground">{alert.description}</p>
-                    <p className="text-xs text-muted-foreground">{alert.time}</p>
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="w-5 h-5" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="h-3 w-60" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
                   </div>
+                  <Skeleton className="h-8 w-24" />
                 </div>
-                <Button variant="outline" size="sm">
-                  {alert.action}
-                </Button>
+              ))
+            ) : failedLogins.length > 0 ? (
+              failedLogins.slice(0, 5).map((log) => (
+                <div key={log.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                    <div>
+                      <p className="font-medium">محاولة دخول فاشلة</p>
+                      <p className="text-sm text-muted-foreground">
+                        من عنوان IP: {log.ipAddress || 'غير معروف'}
+                        {log.userEmail && ` • المستخدم: ${log.userEmail}`}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(log.createdAt), { addSuffix: true, locale: ar })}
+                      </p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" disabled>
+                    تحقق
+                  </Button>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500" />
+                <p>لا توجد تنبيهات أمنية</p>
+                <p className="text-sm">جميع محاولات الدخول ناجحة</p>
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Access Logs */}
+      {/* Access Logs and Reports */}
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -146,29 +239,39 @@ const SecurityManagement = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {[
-                { user: 'admin@wafaa.org', time: 'منذ 5 دقائق', status: 'success', ip: '192.168.1.100' },
-                { user: 'lawyer1@wafaa.org', time: 'منذ 15 دقيقة', status: 'success', ip: '192.168.1.101' },
-                { user: 'unknown', time: 'منذ 30 دقيقة', status: 'failed', ip: '203.0.113.45' },
-                { user: 'client@example.com', time: 'منذ 45 دقيقة', status: 'success', ip: '192.168.1.102' }
-              ].map((log, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border-l-4 border-l-primary/20 bg-secondary/10 rounded">
-                  <div className="flex items-center gap-3">
-                    {log.status === 'success' ? (
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    ) : (
-                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                    )}
-                    <div>
-                      <p className="font-medium">{log.user}</p>
-                      <p className="text-sm text-muted-foreground">{log.ip} • {log.time}</p>
+              {isLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 border-l-4 border-l-primary/20 bg-secondary/10 rounded">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="w-2 h-2 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-40" />
+                      </div>
                     </div>
+                    <Skeleton className="h-6 w-16" />
                   </div>
-                  <Badge variant={log.status === 'success' ? 'default' : 'destructive'}>
-                    {log.status === 'success' ? 'نجح' : 'فشل'}
-                  </Badge>
+                ))
+              ) : auditLogs.length > 0 ? (
+                auditLogs.slice(0, 8).map((log) => (
+                  <div key={log.id} className="flex items-center justify-between p-3 border-l-4 border-l-primary/20 bg-secondary/10 rounded">
+                    <div className="flex items-center gap-3">
+                      {getStatusIcon(log.status)}
+                      <div>
+                        <p className="font-medium">{log.userEmail || 'مستخدم غير معروف'}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {log.ipAddress} • {log.action} • {formatDistanceToNow(new Date(log.createdAt), { addSuffix: true, locale: ar })}
+                        </p>
+                      </div>
+                    </div>
+                    {getStatusBadge(log.status)}
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  لا توجد سجلات وصول
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>
@@ -176,70 +279,60 @@ const SecurityManagement = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Key className="w-5 h-5" />
-              إدارة الصلاحيات
+              <FileText className="w-5 h-5" />
+              التقارير الأمنية
             </CardTitle>
-            <CardDescription>الأدوار والصلاحيات الحالية</CardDescription>
+            <CardDescription>تقارير الأمان والمراجعة</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[
-                { role: 'المدير العام', users: 2, permissions: 'جميع الصلاحيات' },
-                { role: 'المحاميات', users: 8, permissions: 'إدارة القضايا والمواعيد' },
-                { role: 'المشرفات', users: 3, permissions: 'مراقبة النظام' },
-                { role: 'العميلات', users: 156, permissions: 'استخدام الخدمات' }
-              ].map((role, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <p className="font-medium">{role.role}</p>
-                    <p className="text-sm text-muted-foreground">{role.users} مستخدم</p>
-                    <p className="text-xs text-muted-foreground">{role.permissions}</p>
+              {isLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="w-5 h-5" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-40" />
+                        <Skeleton className="h-3 w-32" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-8 w-20" />
                   </div>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Eye className="w-4 h-4" />
-                    عرض
-                  </Button>
+                ))
+              ) : securityReports.length > 0 ? (
+                securityReports.map((report) => (
+                  <div key={report.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-5 h-5 text-primary" />
+                      <div>
+                        <p className="font-medium">{report.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(report.createdAt).toLocaleDateString('ar')} • {formatFileSize(report.fileSize)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={report.status === 'completed' ? 'default' : 'secondary'}>
+                        {report.status === 'completed' ? 'مكتمل' : 'جاري'}
+                      </Badge>
+                      <Button variant="outline" size="sm" className="gap-2" disabled={report.status !== 'completed'}>
+                        <Download className="w-4 h-4" />
+                        تحميل
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>لا توجد تقارير أمنية</p>
+                  <p className="text-sm">سيتم إنشاء التقارير تلقائياً</p>
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Security Reports */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            التقارير الأمنية
-          </CardTitle>
-          <CardDescription>تقارير الأمان والمراجعة</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[
-              { name: 'تقرير المراجعة الأمنية الشهرية', date: 'ديسمبر 2024', size: '2.4 MB' },
-              { name: 'سجل محاولات الاختراق', date: 'الأسبوع الماضي', size: '856 KB' },
-              { name: 'تقرير استخدام الصلاحيات', date: 'آخر 30 يوم', size: '1.2 MB' },
-              { name: 'تحليل أنماط الوصول', date: 'الشهر الحالي', size: '3.1 MB' }
-            ].map((report, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-primary" />
-                  <div>
-                    <p className="font-medium">{report.name}</p>
-                    <p className="text-sm text-muted-foreground">{report.date} • {report.size}</p>
-                  </div>
-                </div>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Download className="w-4 h-4" />
-                  تحميل
-                </Button>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
