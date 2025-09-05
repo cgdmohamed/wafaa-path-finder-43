@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { User, Mail, Phone, MapPin, Calendar, Save } from 'lucide-react';
+import { User, Phone, Save, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { SkeletonCard } from '@/components/ui/skeleton-layouts';
 
 interface Profile {
   id: string;
@@ -19,6 +20,8 @@ interface Profile {
   emergency_contact?: string;
   emergency_phone?: string;
   preferred_language: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface UserRole {
@@ -30,6 +33,16 @@ const ProfilePage = () => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    full_name: '',
+    phone: '',
+    national_id: '',
+    date_of_birth: '',
+    address: '',
+    emergency_contact: '',
+    emergency_phone: '',
+    preferred_language: 'ar'
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -54,12 +67,27 @@ const ProfilePage = () => {
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (profileError && profileError.code !== 'PGRST116') {
+      if (profileError) {
         console.error('Profile fetch error:', profileError);
-      } else {
+        toast({
+          title: "خطأ في تحميل الملف الشخصي",
+          description: profileError.message,
+          variant: "destructive"
+        });
+      } else if (profileData) {
         setProfile(profileData);
+        setFormData({
+          full_name: profileData.full_name || '',
+          phone: profileData.phone || '',
+          national_id: profileData.national_id || '',
+          date_of_birth: profileData.date_of_birth || '',
+          address: profileData.address || '',
+          emergency_contact: profileData.emergency_contact || '',
+          emergency_phone: profileData.emergency_phone || '',
+          preferred_language: profileData.preferred_language || 'ar'
+        });
       }
 
       // Fetch user role
@@ -69,29 +97,90 @@ const ProfilePage = () => {
         .eq('user_id', user.id)
         .order('granted_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (roleError && roleError.code !== 'PGRST116') {
+      if (roleError) {
         console.error('Role fetch error:', roleError);
       } else {
         setUserRole(roleData);
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
+      toast({
+        title: "خطأ غير متوقع",
+        description: "حدث خطأ أثناء تحميل البيانات",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const validateForm = () => {
+    if (!formData.full_name.trim()) {
+      toast({
+        title: "خطأ في البيانات",
+        description: "الاسم الكامل مطلوب",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (formData.phone && !/^(05|5)[0-9]{8}$/.test(formData.phone)) {
+      toast({
+        title: "خطأ في رقم الهاتف",
+        description: "رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (formData.national_id && !/^[1-2][0-9]{9}$/.test(formData.national_id)) {
+      toast({
+        title: "خطأ في رقم الهوية",
+        description: "رقم الهوية يجب أن يتكون من 10 أرقام ويبدأ بـ 1 أو 2",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (formData.emergency_phone && !/^(05|5)[0-9]{8}$/.test(formData.emergency_phone)) {
+      toast({
+        title: "خطأ في رقم هاتف الطوارئ",
+        description: "رقم هاتف الطوارئ يجب أن يبدأ بـ 05 ويتكون من 10 أرقام",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSave = async () => {
-    if (!profile) return;
+    if (!validateForm()) return;
 
     setIsSaving(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "خطأ في المصادقة",
+          description: "يرجى تسجيل الدخول مرة أخرى",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('profiles')
         .upsert({
-          ...profile,
+          user_id: user.id,
+          ...formData,
           updated_at: new Date().toISOString()
         });
 
@@ -106,6 +195,8 @@ const ProfilePage = () => {
           title: "تم حفظ البيانات",
           description: "تم تحديث الملف الشخصي بنجاح"
         });
+        // Re-fetch profile to update state
+        fetchProfile();
       }
     } catch (error) {
       console.error('Error saving profile:', error);
@@ -131,10 +222,17 @@ const ProfilePage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <User className="w-8 h-8 mx-auto mb-4 animate-pulse text-primary" />
-          <p className="text-muted-foreground">جاري تحميل الملف الشخصي...</p>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">الملف الشخصي</h1>
+            <p className="text-muted-foreground">إدارة وتحديث بياناتك الشخصية</p>
+          </div>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard className="md:col-span-2" />
         </div>
       </div>
     );
@@ -165,11 +263,11 @@ const ProfilePage = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="full_name">الاسم الكامل</Label>
+              <Label htmlFor="full_name">الاسم الكامل *</Label>
               <Input
                 id="full_name"
-                value={profile?.full_name || ''}
-                onChange={(e) => setProfile(prev => prev ? { ...prev, full_name: e.target.value } : null)}
+                value={formData.full_name}
+                onChange={(e) => handleInputChange('full_name', e.target.value)}
                 placeholder="أدخلي اسمك الكامل"
               />
             </div>
@@ -177,8 +275,8 @@ const ProfilePage = () => {
               <Label htmlFor="national_id">رقم الهوية الوطنية</Label>
               <Input
                 id="national_id"
-                value={profile?.national_id || ''}
-                onChange={(e) => setProfile(prev => prev ? { ...prev, national_id: e.target.value } : null)}
+                value={formData.national_id}
+                onChange={(e) => handleInputChange('national_id', e.target.value)}
                 placeholder="أدخلي رقم هويتك الوطنية"
               />
             </div>
@@ -187,8 +285,8 @@ const ProfilePage = () => {
               <Input
                 id="date_of_birth"
                 type="date"
-                value={profile?.date_of_birth || ''}
-                onChange={(e) => setProfile(prev => prev ? { ...prev, date_of_birth: e.target.value } : null)}
+                value={formData.date_of_birth}
+                onChange={(e) => handleInputChange('date_of_birth', e.target.value)}
               />
             </div>
           </CardContent>
@@ -207,17 +305,17 @@ const ProfilePage = () => {
               <Label htmlFor="phone">رقم الهاتف</Label>
               <Input
                 id="phone"
-                value={profile?.phone || ''}
-                onChange={(e) => setProfile(prev => prev ? { ...prev, phone: e.target.value } : null)}
-                placeholder="أدخلي رقم هاتفك"
+                value={formData.phone}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+                placeholder="05xxxxxxxx"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="address">العنوان</Label>
               <Input
                 id="address"
-                value={profile?.address || ''}
-                onChange={(e) => setProfile(prev => prev ? { ...prev, address: e.target.value } : null)}
+                value={formData.address}
+                onChange={(e) => handleInputChange('address', e.target.value)}
                 placeholder="أدخلي عنوانك"
               />
             </div>
@@ -225,8 +323,8 @@ const ProfilePage = () => {
               <Label htmlFor="preferred_language">اللغة المفضلة</Label>
               <Input
                 id="preferred_language"
-                value={profile?.preferred_language || 'ar'}
-                onChange={(e) => setProfile(prev => prev ? { ...prev, preferred_language: e.target.value } : null)}
+                value={formData.preferred_language}
+                onChange={(e) => handleInputChange('preferred_language', e.target.value)}
                 placeholder="اللغة المفضلة"
               />
             </div>
@@ -246,8 +344,8 @@ const ProfilePage = () => {
               <Label htmlFor="emergency_contact">اسم جهة الاتصال</Label>
               <Input
                 id="emergency_contact"
-                value={profile?.emergency_contact || ''}
-                onChange={(e) => setProfile(prev => prev ? { ...prev, emergency_contact: e.target.value } : null)}
+                value={formData.emergency_contact}
+                onChange={(e) => handleInputChange('emergency_contact', e.target.value)}
                 placeholder="اسم الشخص للتواصل في الطوارئ"
               />
             </div>
@@ -255,9 +353,9 @@ const ProfilePage = () => {
               <Label htmlFor="emergency_phone">رقم هاتف الطوارئ</Label>
               <Input
                 id="emergency_phone"
-                value={profile?.emergency_phone || ''}
-                onChange={(e) => setProfile(prev => prev ? { ...prev, emergency_phone: e.target.value } : null)}
-                placeholder="رقم هاتف جهة الاتصال"
+                value={formData.emergency_phone}
+                onChange={(e) => handleInputChange('emergency_phone', e.target.value)}
+                placeholder="05xxxxxxxx"
               />
             </div>
           </CardContent>
@@ -266,8 +364,17 @@ const ProfilePage = () => {
 
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={isSaving} className="gap-2">
-          <Save className="w-4 h-4" />
-          {isSaving ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+          {isSaving ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              جاري الحفظ...
+            </>
+          ) : (
+            <>
+              <Save className="w-4 h-4" />
+              حفظ التغييرات
+            </>
+          )}
         </Button>
       </div>
     </div>
