@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, Plus, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+import { SkeletonList } from '@/components/ui/skeleton-layouts';
 
 interface Appointment {
   id: string;
@@ -60,17 +62,37 @@ const AppointmentsPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <Calendar className="w-8 h-8 mx-auto mb-4 animate-pulse text-primary" />
-          <p className="text-muted-foreground">جاري تحميل المواعيد...</p>
-        </div>
+      <div className="space-y-6">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/dashboard">الرئيسية</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>المواعيد</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+        <SkeletonList count={3} />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/dashboard">الرئيسية</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>المواعيد</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+      
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">المواعيد</h1>
