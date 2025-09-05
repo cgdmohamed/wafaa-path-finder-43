@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, FileText, MessageSquare, Scale, Plus, Clock, User } from 'lucide-react';
+import { Calendar, FileText, MessageSquare, Scale, Plus, Clock, User, Upload, Send } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
@@ -115,59 +116,67 @@ const DashboardHome = () => {
         <p className="text-muted-foreground">نظرة عامة على حسابك وخدماتك</p>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Now Clickable */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">المواعيد</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.appointments}</div>
-            <p className="text-xs text-muted-foreground">
-              المواعيد المحجوزة
-            </p>
-          </CardContent>
-        </Card>
+        <Link to="/dashboard/appointments">
+          <Card className="transition-all hover:shadow-lg hover:scale-105 cursor-pointer border-primary/20 hover:border-primary">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">المواعيد</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.appointments}</div>
+              <p className="text-xs text-muted-foreground">
+                المواعيد المحجوزة
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">القضايا</CardTitle>
-            <Scale className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.cases}</div>
-            <p className="text-xs text-muted-foreground">
-              القضايا المفتوحة
-            </p>
-          </CardContent>
-        </Card>
+        <Link to="/dashboard/cases">
+          <Card className="transition-all hover:shadow-lg hover:scale-105 cursor-pointer border-primary/20 hover:border-primary">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">القضايا</CardTitle>
+              <Scale className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.cases}</div>
+              <p className="text-xs text-muted-foreground">
+                القضايا المفتوحة
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">المستندات</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.documents}</div>
-            <p className="text-xs text-muted-foreground">
-              المستندات المرفوعة
-            </p>
-          </CardContent>
-        </Card>
+        <Link to="/dashboard/documents">
+          <Card className="transition-all hover:shadow-lg hover:scale-105 cursor-pointer border-primary/20 hover:border-primary">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">المستندات</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.documents}</div>
+              <p className="text-xs text-muted-foreground">
+                المستندات المرفوعة
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">الرسائل</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.messages}</div>
-            <p className="text-xs text-muted-foreground">
-              الرسائل المرسلة
-            </p>
-          </CardContent>
-        </Card>
+        <Link to="/dashboard/messages">
+          <Card className="transition-all hover:shadow-lg hover:scale-105 cursor-pointer border-primary/20 hover:border-primary">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">الرسائل</CardTitle>
+              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.messages}</div>
+              <p className="text-xs text-muted-foreground">
+                الرسائل المرسلة
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       {/* Quick Actions and Recent Activity */}
@@ -180,20 +189,34 @@ const DashboardHome = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <Button className="w-full justify-start gap-2" size="lg">
-              <Calendar className="w-4 h-4" />
-              حجز موعد جديد
-            </Button>
-            <Button className="w-full justify-start gap-2" size="lg" variant="outline">
-              <Plus className="w-4 h-4" />
-              طلب خدمة جديدة
-            </Button>
-            <Button className="w-full justify-start gap-2" size="lg" variant="outline">
-              <FileText className="w-4 h-4" />
+            <Link to="/dashboard/appointments/new">
+              <Button className="w-full justify-start gap-2" size="lg">
+                <Calendar className="w-4 h-4" />
+                حجز موعد جديد
+              </Button>
+            </Link>
+            <Link to="/dashboard/requests/new">
+              <Button className="w-full justify-start gap-2" size="lg" variant="outline">
+                <Plus className="w-4 h-4" />
+                طلب خدمة جديدة
+              </Button>
+            </Link>
+            <Button className="w-full justify-start gap-2" size="lg" variant="outline" 
+              onClick={() => {
+                // Trigger document upload dialog
+                const event = new CustomEvent('open-document-upload');
+                window.dispatchEvent(event);
+              }}>
+              <Upload className="w-4 h-4" />
               رفع مستند
             </Button>
-            <Button className="w-full justify-start gap-2" size="lg" variant="outline">
-              <MessageSquare className="w-4 h-4" />
+            <Button className="w-full justify-start gap-2" size="lg" variant="outline"
+              onClick={() => {
+                // Trigger message dialog
+                const event = new CustomEvent('open-message-dialog');
+                window.dispatchEvent(event);
+              }}>
+              <Send className="w-4 h-4" />
               إرسال رسالة
             </Button>
           </CardContent>

@@ -55,6 +55,14 @@ const DocumentsPage = () => {
 
   useEffect(() => {
     fetchDocuments();
+    
+    // Listen for quick action triggers from dashboard
+    const handleOpenUpload = () => setUploadDialogOpen(true);
+    window.addEventListener('open-document-upload', handleOpenUpload);
+    
+    return () => {
+      window.removeEventListener('open-document-upload', handleOpenUpload);
+    };
   }, []);
 
   const fetchDocuments = async () => {
@@ -355,11 +363,43 @@ const DocumentsPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-end gap-2">
-                  <Button variant="outline" size="sm" className="gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2"
+                    onClick={() => {
+                      // Basic preview functionality - in production would show actual file
+                      toast({
+                        title: "معاينة المستند",
+                        description: `عرض مستند: ${document.file_name}`,
+                        duration: 3000
+                      });
+                    }}
+                  >
                     <Eye className="w-4 h-4" />
                     عرض
                   </Button>
-                  <Button variant="outline" size="sm" className="gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2"
+                    onClick={async () => {
+                      try {
+                        // In production, this would download from Supabase storage
+                        toast({
+                          title: "جاري التحميل",
+                          description: `تحميل مستند: ${document.file_name}`,
+                          duration: 3000
+                        });
+                      } catch (error) {
+                        toast({
+                          title: "خطأ في التحميل",
+                          description: "فشل في تحميل المستند",
+                          variant: "destructive"
+                        });
+                      }
+                    }}
+                  >
                     <Download className="w-4 h-4" />
                     تحميل
                   </Button>

@@ -20,6 +20,7 @@ import {
   Menu,
   X
 } from 'lucide-react';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 
@@ -214,9 +215,9 @@ const DashboardLayout = () => {
         <div className="flex items-center gap-2">
           <Scale className="w-6 h-6 text-primary" />
           <span className="font-bold text-primary">جمعية وفاء</span>
-        </div>
-        <div className="w-6 h-6" /> {/* Spacer */}
-      </div>
+                </div>
+                <NotificationBell />
+              </div>
 
       <div className="flex">
         {/* Sidebar */}

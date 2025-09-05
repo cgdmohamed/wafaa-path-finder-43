@@ -56,6 +56,10 @@ const MessagesPage = () => {
   useEffect(() => {
     fetchMessages();
     
+    // Listen for quick action triggers from dashboard
+    const handleOpenMessage = () => setMessageDialogOpen(true);
+    window.addEventListener('open-message-dialog', handleOpenMessage);
+    
     // Set up real-time subscription for new messages
     const channel = supabase
       .channel('contact_messages_changes')
@@ -74,6 +78,7 @@ const MessagesPage = () => {
       .subscribe();
 
     return () => {
+      window.removeEventListener('open-message-dialog', handleOpenMessage);
       supabase.removeChannel(channel);
     };
   }, []);

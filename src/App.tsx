@@ -19,6 +19,7 @@ import CasesPage from "./pages/dashboard/CasesPage";
 import DocumentsPage from "./pages/dashboard/DocumentsPage";
 import MessagesPage from "./pages/dashboard/MessagesPage";
 import ProfilePage from "./pages/dashboard/ProfilePage";
+import NotificationsCenter from "./pages/dashboard/NotificationsCenter";
 import DatabaseManagement from "./pages/admin/DatabaseManagement";
 import SystemSettings from "./pages/admin/SystemSettings";
 import SecurityManagement from "./pages/admin/SecurityManagement";
@@ -53,6 +54,7 @@ const App = () => (
               <Route path="cases" element={<CasesPage />} />
               <Route path="documents" element={<DocumentsPage />} />
               <Route path="messages" element={<MessagesPage />} />
+              <Route path="notifications" element={<NotificationsCenter />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="admin" element={
                 <ProtectedRoute requiredRole="admin">
