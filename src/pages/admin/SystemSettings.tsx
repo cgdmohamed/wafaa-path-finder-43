@@ -145,7 +145,7 @@ const SystemSettings = () => {
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             إعادة تحميل
           </Button>
-          <Button className="gap-2" onClick={handleSave} disabled={isSaving || isLoading}>
+          <Button className="gap-2" onClick={handleSave} disabled={isSaving || isLoading} data-testid="settings-save">
             <Save className="w-4 h-4" />
             {isSaving ? 'جاري الحفظ...' : 'حفظ التغييرات'}
           </Button>
@@ -153,7 +153,7 @@ const SystemSettings = () => {
       </div>
 
       {/* General Settings */}
-      <Card>
+      <Card data-testid="general-settings">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Globe className="w-5 h-5" />

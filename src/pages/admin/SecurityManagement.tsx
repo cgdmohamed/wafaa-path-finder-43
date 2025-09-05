@@ -75,7 +75,7 @@ const SecurityManagement = () => {
           </Button>
         </div>
         
-        <Card>
+      <Card data-testid="security-alerts">
           <CardContent className="flex items-center justify-center py-12">
             <div className="text-center space-y-4">
               <AlertTriangle className="w-12 h-12 text-destructive mx-auto" />
@@ -171,7 +171,7 @@ const SecurityManagement = () => {
       </div>
 
       {/* Recent Security Alerts */}
-      <Card>
+        <Card data-testid="audit-logs">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5" />

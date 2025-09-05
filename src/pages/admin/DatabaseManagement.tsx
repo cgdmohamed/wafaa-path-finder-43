@@ -51,7 +51,7 @@ const DatabaseManagement = () => {
           </Button>
         </div>
         
-        <Card>
+      <Card data-testid="db-tables-status">
           <CardContent className="flex items-center justify-center py-12">
             <div className="text-center space-y-4">
               <AlertTriangle className="w-12 h-12 text-destructive mx-auto" />
@@ -85,7 +85,7 @@ const DatabaseManagement = () => {
 
       {/* Database Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card data-testid="total-tables-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">إجمالي الجداول</CardTitle>
             <Database className="h-4 w-4 text-muted-foreground" />
@@ -94,13 +94,13 @@ const DatabaseManagement = () => {
             {isLoading ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <div className="text-2xl font-bold">{stats?.totalTables || 0}</div>
+              <div className="text-2xl font-bold" data-testid="total-tables">{stats?.totalTables || 0}</div>
             )}
             <p className="text-xs text-muted-foreground">جداول نشطة</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-testid="total-records-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">إجمالي السجلات</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
@@ -109,13 +109,13 @@ const DatabaseManagement = () => {
             {isLoading ? (
               <Skeleton className="h-8 w-20" />
             ) : (
-              <div className="text-2xl font-bold">{stats?.totalRecords?.toLocaleString() || 0}</div>
+              <div className="text-2xl font-bold" data-testid="total-records">{stats?.totalRecords?.toLocaleString() || 0}</div>
             )}
             <p className="text-xs text-muted-foreground">سجل في النظام</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-testid="db-size-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">حجم قاعدة البيانات</CardTitle>
             <HardDrive className="h-4 w-4 text-muted-foreground" />
@@ -124,13 +124,13 @@ const DatabaseManagement = () => {
             {isLoading ? (
               <Skeleton className="h-8 w-24" />
             ) : (
-              <div className="text-2xl font-bold">{stats?.dbSize || 'غير متاح'}</div>
+              <div className="text-2xl font-bold" data-testid="db-size">{stats?.dbSize || 'غير متاح'}</div>
             )}
             <p className="text-xs text-muted-foreground">الحجم الحالي</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-testid="last-backup-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">آخر نسخة احتياطية</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
@@ -140,7 +140,7 @@ const DatabaseManagement = () => {
               <Skeleton className="h-8 w-16" />
             ) : backups.length > 0 ? (
               <>
-                <div className="text-2xl font-bold">
+                <div className="text-2xl font-bold" data-testid="last-backup-time">
                   {new Date(backups[0].createdAt).toLocaleTimeString('ar', { 
                     hour: '2-digit', 
                     minute: '2-digit' 
@@ -155,7 +155,7 @@ const DatabaseManagement = () => {
               </>
             ) : (
               <>
-                <div className="text-2xl font-bold">-</div>
+                <div className="text-2xl font-bold" data-testid="last-backup-time">-</div>
                 <p className="text-xs text-muted-foreground">لا توجد نسخ احتياطية</p>
               </>
             )}
