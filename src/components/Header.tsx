@@ -20,9 +20,11 @@ const Header = () => {
         <div className="flex h-16 items-center justify-between">
           {/* الشعار */}
           <div className="flex items-center space-x-4 rtl:space-x-reverse">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-light rounded-full flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-xl">وفاء</span>
-            </div>
+            <img 
+              src="/lovable-uploads/7e113086-7b5a-4d72-a9ed-62d1caf0ffec.png" 
+              alt="شعار جمعية وفاء للخدمات القانونية للمرأة" 
+              className="h-12 w-auto"
+            />
             <div className="text-right">
               <h1 className="text-lg font-bold text-primary">جمعية وفاء</h1>
               <p className="text-sm text-muted-foreground">للخدمات القانونية للمرأة</p>
