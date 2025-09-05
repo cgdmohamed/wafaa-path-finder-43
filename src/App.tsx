@@ -9,6 +9,7 @@ import AuthPage from "./components/Auth/AuthPage";
 import DashboardLayout from "./components/Dashboard/DashboardLayout";
 import DashboardHome from "./components/Dashboard/DashboardHome";
 import AppointmentBooking from "./components/Dashboard/AppointmentBooking";
+import AdminDashboard from "./components/Dashboard/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<DashboardHome />} />
             <Route path="appointments/new" element={<AppointmentBooking />} />
+            <Route path="admin" element={<AdminDashboard />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
