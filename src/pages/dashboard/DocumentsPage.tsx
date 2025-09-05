@@ -210,7 +210,7 @@ const DocumentsPage = () => {
                   ref={fileInputRef}
                 />
                 {errors.file && (
-                  <p className="text-sm text-destructive">{errors.file.message}</p>
+                  <p className="text-sm text-destructive">{String(errors.file?.message || '')}</p>
                 )}
               </div>
               
@@ -284,7 +284,7 @@ const DocumentsPage = () => {
                       {...register('file')}
                     />
                     {errors.file && (
-                      <p className="text-sm text-destructive">{errors.file.message}</p>
+                      <p className="text-sm text-destructive">{String(errors.file?.message || '')}</p>
                     )}
                   </div>
                   
@@ -302,9 +302,9 @@ const DocumentsPage = () => {
                       <option value="evidence">دليل</option>
                       <option value="other">أخرى</option>
                     </select>
-                    {errors.document_type && (
-                      <p className="text-sm text-destructive">{errors.document_type?.message}</p>
-                    )}
+                {errors.document_type && (
+                  <p className="text-sm text-destructive">{String(errors.document_type?.message || '')}</p>
+                )}
                   </div>
                   
                   <div className="space-y-2">
