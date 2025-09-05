@@ -4,10 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { User, Phone, Save, Loader2 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { User, Phone, Mail, MapPin, Calendar, AlertTriangle, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { SkeletonCard } from '@/components/ui/skeleton-layouts';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 
 interface Profile {
   id: string;
@@ -25,25 +30,40 @@ interface Profile {
 }
 
 interface UserRole {
-  role: string;
+  id: string;
+  user_id: string;
+  role: 'client' | 'lawyer' | 'admin' | 'moderator';
+  granted_by?: string;
+  granted_at: string;
 }
+
+const profileSchema = z.object({
+  full_name: z.string().min(2, 'الاسم يجب أن يكون حرفين على الأقل'),
+  phone: z.string().regex(/^05\d{8}$/, 'رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام').optional().or(z.literal('')),
+  national_id: z.string().regex(/^\d{10}$/, 'رقم الهوية يجب أن يتكون من 10 أرقام').optional().or(z.literal('')),
+  date_of_birth: z.string().optional(),
+  address: z.string().optional(),
+  emergency_contact: z.string().optional(),
+  emergency_phone: z.string().regex(/^05\d{8}$/, 'رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام').optional().or(z.literal(''))
+});
+
+type ProfileFormData = z.infer<typeof profileSchema>;
 
 const ProfilePage = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [formData, setFormData] = useState({
-    full_name: '',
-    phone: '',
-    national_id: '',
-    date_of_birth: '',
-    address: '',
-    emergency_contact: '',
-    emergency_phone: '',
-    preferred_language: 'ar'
-  });
   const { toast } = useToast();
+  
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset
+  } = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema)
+  });
 
   useEffect(() => {
     fetchProfile();
@@ -67,39 +87,36 @@ const ProfilePage = () => {
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
-        .maybeSingle();
+        .single();
 
-      if (profileError) {
+      if (profileError && profileError.code !== 'PGRST116') {
         console.error('Profile fetch error:', profileError);
-        toast({
-          title: "خطأ في تحميل الملف الشخصي",
-          description: profileError.message,
-          variant: "destructive"
-        });
-      } else if (profileData) {
+      } else {
         setProfile(profileData);
-        setFormData({
-          full_name: profileData.full_name || '',
-          phone: profileData.phone || '',
-          national_id: profileData.national_id || '',
-          date_of_birth: profileData.date_of_birth || '',
-          address: profileData.address || '',
-          emergency_contact: profileData.emergency_contact || '',
-          emergency_phone: profileData.emergency_phone || '',
-          preferred_language: profileData.preferred_language || 'ar'
-        });
+        // Set form default values
+        if (profileData) {
+          reset({
+            full_name: profileData.full_name || '',
+            phone: profileData.phone || '',
+            national_id: profileData.national_id || '',
+            date_of_birth: profileData.date_of_birth || '',
+            address: profileData.address || '',
+            emergency_contact: profileData.emergency_contact || '',
+            emergency_phone: profileData.emergency_phone || ''
+          });
+        }
       }
 
       // Fetch user role
       const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
-        .select('role')
+        .select('*')
         .eq('user_id', user.id)
         .order('granted_at', { ascending: false })
         .limit(1)
-        .maybeSingle();
+        .single();
 
-      if (roleError) {
+      if (roleError && roleError.code !== 'PGRST116') {
         console.error('Role fetch error:', roleError);
       } else {
         setUserRole(roleData);
@@ -116,53 +133,7 @@ const ProfilePage = () => {
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const validateForm = () => {
-    if (!formData.full_name.trim()) {
-      toast({
-        title: "خطأ في البيانات",
-        description: "الاسم الكامل مطلوب",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (formData.phone && !/^(05|5)[0-9]{8}$/.test(formData.phone)) {
-      toast({
-        title: "خطأ في رقم الهاتف",
-        description: "رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (formData.national_id && !/^[1-2][0-9]{9}$/.test(formData.national_id)) {
-      toast({
-        title: "خطأ في رقم الهوية",
-        description: "رقم الهوية يجب أن يتكون من 10 أرقام ويبدأ بـ 1 أو 2",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (formData.emergency_phone && !/^(05|5)[0-9]{8}$/.test(formData.emergency_phone)) {
-      toast({
-        title: "خطأ في رقم هاتف الطوارئ",
-        description: "رقم هاتف الطوارئ يجب أن يبدأ بـ 05 ويتكون من 10 أرقام",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleSave = async () => {
-    if (!validateForm()) return;
-
+  const handleSave = async (data: ProfileFormData) => {
     setIsSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -176,13 +147,14 @@ const ProfilePage = () => {
         return;
       }
 
-      const { error } = await supabase
+      const { data: updatedProfile, error } = await supabase
         .from('profiles')
         .upsert({
           user_id: user.id,
-          ...formData,
-          updated_at: new Date().toISOString()
-        });
+          ...data
+        })
+        .select()
+        .single();
 
       if (error) {
         toast({
@@ -191,12 +163,11 @@ const ProfilePage = () => {
           variant: "destructive"
         });
       } else {
+        setProfile(updatedProfile);
         toast({
           title: "تم حفظ البيانات",
           description: "تم تحديث الملف الشخصي بنجاح"
         });
-        // Re-fetch profile to update state
-        fetchProfile();
       }
     } catch (error) {
       console.error('Error saving profile:', error);
@@ -220,19 +191,34 @@ const ProfilePage = () => {
     return roleNames[role as keyof typeof roleNames] || 'عميلة';
   };
 
+  const getRoleBadgeVariant = (role: string): "default" | "destructive" | "outline" | "secondary" => {
+    const variants: Record<string, "default" | "destructive" | "outline" | "secondary"> = {
+      'client': 'secondary',
+      'lawyer': 'default',
+      'admin': 'destructive',
+      'moderator': 'outline'
+    };
+    return variants[role] || 'secondary';
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">الملف الشخصي</h1>
-            <p className="text-muted-foreground">إدارة وتحديث بياناتك الشخصية</p>
-          </div>
-        </div>
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/dashboard">الرئيسية</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>الملف الشخصي</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+        
         <div className="grid gap-6 md:grid-cols-2">
-          <SkeletonCard />
-          <SkeletonCard />
-          <SkeletonCard className="md:col-span-2" />
+          <SkeletonCard lines={5} />
+          <SkeletonCard lines={5} />
         </div>
       </div>
     );
@@ -240,143 +226,168 @@ const ProfilePage = () => {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/dashboard">الرئيسية</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>الملف الشخصي</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+      
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">الملف الشخصي</h1>
-          <p className="text-muted-foreground">إدارة وتحديث بياناتك الشخصية</p>
+          <p className="text-muted-foreground">إدارة بياناتك الشخصية ومعلومات الاتصال</p>
         </div>
         {userRole && (
-          <Badge variant="outline" className="text-sm">
+          <Badge variant={getRoleBadgeVariant(userRole.role)}>
             {getRoleDisplayName(userRole.role)}
           </Badge>
         )}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" />
-              المعلومات الأساسية
-            </CardTitle>
-            <CardDescription>البيانات الشخصية الأساسية</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="full_name">الاسم الكامل *</Label>
-              <Input
-                id="full_name"
-                value={formData.full_name}
-                onChange={(e) => handleInputChange('full_name', e.target.value)}
-                placeholder="أدخلي اسمك الكامل"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="national_id">رقم الهوية الوطنية</Label>
-              <Input
-                id="national_id"
-                value={formData.national_id}
-                onChange={(e) => handleInputChange('national_id', e.target.value)}
-                placeholder="أدخلي رقم هويتك الوطنية"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="date_of_birth">تاريخ الميلاد</Label>
-              <Input
-                id="date_of_birth"
-                type="date"
-                value={formData.date_of_birth}
-                onChange={(e) => handleInputChange('date_of_birth', e.target.value)}
-              />
-            </div>
-          </CardContent>
-        </Card>
+      <form onSubmit={handleSubmit(handleSave)}>
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="w-5 h-5" />
+                المعلومات الأساسية
+              </CardTitle>
+              <CardDescription>
+                البيانات الشخصية الأساسية
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="full_name">الاسم الكامل</Label>
+                <Input
+                  id="full_name"
+                  placeholder="الاسم الكامل"
+                  {...register('full_name')}
+                />
+                {errors.full_name && (
+                  <p className="text-sm text-destructive">{errors.full_name.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="national_id">رقم الهوية الوطنية</Label>
+                <Input
+                  id="national_id"
+                  placeholder="1234567890"
+                  {...register('national_id')}
+                />
+                {errors.national_id && (
+                  <p className="text-sm text-destructive">{errors.national_id.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="date_of_birth">تاريخ الميلاد</Label>
+                <Input
+                  id="date_of_birth"
+                  type="date"
+                  {...register('date_of_birth')}
+                />
+                {errors.date_of_birth && (
+                  <p className="text-sm text-destructive">{errors.date_of_birth.message}</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Phone className="w-5 h-5" />
+                معلومات الاتصال
+              </CardTitle>
+              <CardDescription>
+                بيانات التواصل والعنوان
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone">رقم الهاتف</Label>
+                <Input
+                  id="phone"
+                  placeholder="05xxxxxxxx"
+                  {...register('phone')}
+                />
+                {errors.phone && (
+                  <p className="text-sm text-destructive">{errors.phone.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address">العنوان</Label>
+                <Textarea
+                  id="address"
+                  placeholder="العنوان الكامل"
+                  rows={3}
+                  {...register('address')}
+                />
+                {errors.address && (
+                  <p className="text-sm text-destructive">{errors.address.message}</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Phone className="w-5 h-5" />
-              معلومات التواصل
-            </CardTitle>
-            <CardDescription>بيانات التواصل والعنوان</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="phone">رقم الهاتف</Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                placeholder="05xxxxxxxx"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="address">العنوان</Label>
-              <Input
-                id="address"
-                value={formData.address}
-                onChange={(e) => handleInputChange('address', e.target.value)}
-                placeholder="أدخلي عنوانك"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="preferred_language">اللغة المفضلة</Label>
-              <Input
-                id="preferred_language"
-                value={formData.preferred_language}
-                onChange={(e) => handleInputChange('preferred_language', e.target.value)}
-                placeholder="اللغة المفضلة"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Phone className="w-5 h-5" />
+              <AlertTriangle className="w-5 h-5" />
               جهة الاتصال في حالات الطوارئ
             </CardTitle>
-            <CardDescription>بيانات شخص للتواصل معه في حالات الطوارئ</CardDescription>
+            <CardDescription>
+              معلومات شخص للتواصل معه في حالات الطوارئ
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="emergency_contact">اسم جهة الاتصال</Label>
               <Input
                 id="emergency_contact"
-                value={formData.emergency_contact}
-                onChange={(e) => handleInputChange('emergency_contact', e.target.value)}
-                placeholder="اسم الشخص للتواصل في الطوارئ"
+                placeholder="اسم الشخص للتواصل"
+                {...register('emergency_contact')}
               />
+              {errors.emergency_contact && (
+                <p className="text-sm text-destructive">{errors.emergency_contact.message}</p>
+              )}
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="emergency_phone">رقم هاتف الطوارئ</Label>
               <Input
                 id="emergency_phone"
-                value={formData.emergency_phone}
-                onChange={(e) => handleInputChange('emergency_phone', e.target.value)}
                 placeholder="05xxxxxxxx"
+                {...register('emergency_phone')}
               />
+              {errors.emergency_phone && (
+                <p className="text-sm text-destructive">{errors.emergency_phone.message}</p>
+              )}
             </div>
           </CardContent>
         </Card>
-      </div>
 
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={isSaving} className="gap-2">
-          {isSaving ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              جاري الحفظ...
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4" />
-              حفظ التغييرات
-            </>
-          )}
-        </Button>
-      </div>
+        <div className="flex justify-end">
+          <Button 
+            type="submit"
+            disabled={isSaving}
+            className="gap-2"
+          >
+            <Save className="w-4 h-4" />
+            {isSaving ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 };

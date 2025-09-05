@@ -119,7 +119,7 @@ const DocumentsPage = () => {
         .insert({
           file_name: file.name,
           file_path: filePath,
-          document_type: data.document_type,
+          document_type: data.document_type as 'other' | 'contract' | 'evidence' | 'court_filing' | 'identification' | 'medical' | 'financial',
           description: data.description,
           file_size: file.size,
           mime_type: file.type,
@@ -222,14 +222,14 @@ const DocumentsPage = () => {
                   className="w-full p-2 border border-border rounded-md bg-background"
                 >
                   <option value="">اختاري نوع المستند</option>
-                  <option value="identity">هوية شخصية</option>
+                  <option value="identification">هوية شخصية</option>
                   <option value="contract">عقد</option>
-                  <option value="court_document">مستند محكمة</option>
+                  <option value="court_filing">مستند محكمة</option>
                   <option value="evidence">دليل</option>
                   <option value="other">أخرى</option>
                 </select>
                 {errors.document_type && (
-                  <p className="text-sm text-destructive">{errors.document_type.message}</p>
+                  <p className="text-sm text-destructive">{errors.document_type?.message}</p>
                 )}
               </div>
               
@@ -296,14 +296,14 @@ const DocumentsPage = () => {
                       className="w-full p-2 border border-border rounded-md bg-background"
                     >
                       <option value="">اختاري نوع المستند</option>
-                      <option value="identity">هوية شخصية</option>
+                      <option value="identification">هوية شخصية</option>
                       <option value="contract">عقد</option>
-                      <option value="court_document">مستند محكمة</option>
+                      <option value="court_filing">مستند محكمة</option>
                       <option value="evidence">دليل</option>
                       <option value="other">أخرى</option>
                     </select>
                     {errors.document_type && (
-                      <p className="text-sm text-destructive">{errors.document_type.message}</p>
+                      <p className="text-sm text-destructive">{errors.document_type?.message}</p>
                     )}
                   </div>
                   
