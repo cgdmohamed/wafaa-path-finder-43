@@ -12,6 +12,8 @@ import DashboardLayout from "./components/Dashboard/DashboardLayout";
 import DashboardHome from "./components/Dashboard/DashboardHome";
 import AppointmentBooking from "./components/Dashboard/AppointmentBooking";
 import AdminDashboard from "./components/Dashboard/AdminDashboard";
+import RequestsPage from "./pages/dashboard/RequestsPage";
+import NewRequestPage from "./pages/dashboard/NewRequestPage";
 import AppointmentsPage from "./pages/dashboard/AppointmentsPage";
 import CasesPage from "./pages/dashboard/CasesPage";
 import DocumentsPage from "./pages/dashboard/DocumentsPage";
@@ -41,8 +43,10 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={<DashboardHome />} />
-              <Route path="appointments/new" element={<AppointmentBooking />} />
+              <Route path="requests" element={<RequestsPage />} />
+              <Route path="requests/new" element={<NewRequestPage />} />
               <Route path="appointments" element={<AppointmentsPage />} />
+              <Route path="appointments/new" element={<AppointmentBooking />} />
               <Route path="cases" element={<CasesPage />} />
               <Route path="documents" element={<DocumentsPage />} />
               <Route path="messages" element={<MessagesPage />} />
