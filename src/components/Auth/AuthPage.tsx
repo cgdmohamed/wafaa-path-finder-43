@@ -6,12 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, LogIn, UserPlus, Scale } from 'lucide-react';
+import { Eye, EyeOff, LogIn, UserPlus, Scale, KeyRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const AuthPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showResetForm, setShowResetForm] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -166,6 +168,47 @@ const AuthPage = () => {
     }
   };
 
+  const handlePasswordReset = async () => {
+    if (!resetEmail) {
+      toast({
+        title: "البريد الإلكتروني مطلوب",
+        description: "يرجى إدخال بريدك الإلكتروني",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/auth`
+      });
+
+      if (error) {
+        toast({
+          title: "خطأ في إعادة تعيين كلمة المرور",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "تم إرسال رابط إعادة التعيين",
+          description: "يرجى التحقق من بريدك الإلكتروني واتباع التعليمات",
+        });
+        setShowResetForm(false);
+        setResetEmail('');
+      }
+    } catch (error) {
+      toast({
+        title: "خطأ غير متوقع",
+        description: "حدث خطأ أثناء إرسال رابط إعادة التعيين",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-accent/20 flex items-center justify-center p-4" dir="rtl">
       <div className="w-full max-w-md">
@@ -239,6 +282,16 @@ const AuthPage = () => {
                 >
                   {isLoading ? "جاري تسجيل الدخول..." : "دخول"}
                 </Button>
+                
+                <div className="text-center">
+                  <Button
+                    variant="link"
+                    onClick={() => setShowResetForm(true)}
+                    className="text-sm text-muted-foreground hover:text-primary"
+                  >
+                    نسيت كلمة المرور؟
+                  </Button>
+                </div>
               </TabsContent>
 
               <TabsContent value="signup" className="space-y-4">
@@ -329,9 +382,57 @@ const AuthPage = () => {
             </div>
           </CardContent>
         </Card>
-      </div>
-    </div>
-  );
-};
+
+        {/* Password Reset Modal */}
+        {showResetForm && (
+          <Card className="shadow-xl border-border/50 mt-4">
+            <CardHeader>
+              <CardTitle className="text-center text-primary flex items-center justify-center gap-2">
+                <KeyRound className="w-5 h-5" />
+                إعادة تعيين كلمة المرور
+              </CardTitle>
+              <CardDescription className="text-center">
+                أدخلي بريدك الإلكتروني لإرسال رابط إعادة تعيين كلمة المرور
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="reset-email">البريد الإلكتروني</Label>
+                <Input
+                  id="reset-email"
+                  type="email"
+                  placeholder="أدخلي بريدك الإلكتروني"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  className="text-right"
+                  dir="ltr"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handlePasswordReset}
+                  disabled={isLoading}
+                  className="flex-1 bg-gradient-to-r from-primary to-primary-light"
+                >
+                  {isLoading ? "جاري الإرسال..." : "إرسال رابط الإعادة"}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowResetForm(false);
+                    setResetEmail('');
+                  }}
+                  disabled={isLoading}
+                >
+                  إلغاء
+                </Button>
+              </div>
+             </CardContent>
+           </Card>
+         )}
+       </div>
+     </div>
+   );
+ };
 
 export default AuthPage;
