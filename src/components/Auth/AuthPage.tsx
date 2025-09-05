@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, LogIn, UserPlus, Scale, KeyRound } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const AuthPage = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -23,13 +23,15 @@ const AuthPage = () => {
   });
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     // Check if user is already authenticated
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate('/dashboard');
+        const redirectTo = searchParams.get('redirect') || '/dashboard';
+        navigate(redirectTo, { replace: true });
       }
     };
     checkAuth();
@@ -155,7 +157,8 @@ const AuthPage = () => {
           title: "مرحباً بك",
           description: "تم تسجيل الدخول بنجاح"
         });
-        navigate('/dashboard');
+        const redirectTo = searchParams.get('redirect') || '/dashboard';
+        navigate(redirectTo, { replace: true });
       }
     } catch (error) {
       toast({

@@ -3,7 +3,8 @@ import { test, expect } from '@playwright/test';
 test.describe('Dashboard Authentication & Routes', () => {
   test('should redirect to auth when not logged in', async ({ page }) => {
     await page.goto('/dashboard');
-    await expect(page).toHaveURL(/.*\/auth/);
+    await expect(page).toHaveURL(/.*\/auth\?redirect/);
+    await expect(page.url()).toContain('redirect=%2Fdashboard');
   });
 
   test('should redirect to auth for protected routes when not logged in', async ({ page }) => {
@@ -18,7 +19,8 @@ test.describe('Dashboard Authentication & Routes', () => {
 
     for (const route of protectedRoutes) {
       await page.goto(route);
-      await expect(page).toHaveURL(/.*\/auth/);
+      await expect(page).toHaveURL(/.*\/auth\?redirect/);
+      await expect(page.url()).toContain(`redirect=${encodeURIComponent(route)}`);
     }
   });
 
