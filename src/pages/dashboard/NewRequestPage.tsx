@@ -1,127 +1,115 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Scale, Send, ArrowLeft, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate, Link } from 'react-router-dom';
+import { ArrowRight, FileText, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
+import { z } from 'zod';
+
+const requestSchema = z.object({
+  title: z.string()
+    .min(5, 'العنوان يجب أن يكون 5 أحرف على الأقل')
+    .max(200, 'العنوان يجب أن يكون أقل من 200 حرف'),
+  case_type: z.string().min(1, 'يرجى اختيار نوع القضية'),
+  description: z.string()
+    .min(20, 'الوصف يجب أن يكون 20 حرف على الأقل')
+    .max(5000, 'الوصف يجب أن يكون أقل من 5000 حرف'),
+  priority: z.number().min(1).max(5),
+});
+
+type RequestFormData = z.infer<typeof requestSchema>;
 
 const NewRequestPage = () => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<RequestFormData>({
     title: '',
     case_type: '',
     description: '',
-    priority: 3
+    priority: 3,
   });
-  const { toast } = useToast();
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleInputChange = (field: string, value: string | number) => {
+  const handleInputChange = (field: keyof RequestFormData, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
   };
 
-  const validateForm = () => {
-    if (!formData.title.trim()) {
-      toast({
-        title: "خطأ في البيانات",
-        description: "عنوان الطلب مطلوب",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (formData.title.length < 5) {
-      toast({
-        title: "خطأ في البيانات",
-        description: "العنوان يجب أن يكون 5 أحرف على الأقل",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (!formData.case_type) {
-      toast({
-        title: "خطأ في البيانات",
-        description: "نوع القضية مطلوب",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (!formData.description.trim()) {
-      toast({
-        title: "خطأ في البيانات",
-        description: "وصف القضية مطلوب",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (formData.description.length < 20) {
-      toast({
-        title: "خطأ في البيانات",
-        description: "الوصف يجب أن يكون 20 حرفاً على الأقل",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
-
-    setIsSubmitting(true);
+  const validateForm = (): boolean => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "خطأ في المصادقة",
-          description: "يرجى تسجيل الدخول مرة أخرى",
-          variant: "destructive"
+      requestSchema.parse(formData);
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        error.issues.forEach((issue) => {
+          if (issue.path[0]) {
+            fieldErrors[issue.path[0].toString()] = issue.message;
+          }
         });
-        return;
+        setErrors(fieldErrors);
+      }
+      return false;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      toast({
+        title: "خطأ في البيانات",
+        description: "يرجى تصحيح الأخطاء أولاً",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        throw new Error('يجب تسجيل الدخول أولاً');
       }
 
-      // Generate a simple case number since we don't have the auto-generate function
-      const caseNumber = `CASE-${Date.now()}`;
-
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('cases')
         .insert({
-          case_number: caseNumber,
-          client_id: user.id,
+          client_id: session.user.id,
           title: formData.title,
-          case_type: formData.case_type as any, // Type assertion for enum
+          case_type: formData.case_type as 'property' | 'divorce' | 'custody' | 'domestic_violence' | 'inheritance' | 'employment' | 'other',
           description: formData.description,
           priority: formData.priority,
-          status: 'initial'
-        });
+          status: 'initial',
+          case_number: '' // Will be auto-generated by trigger
+        })
+        .select()
+        .single();
 
-      if (error) {
-        toast({
-          title: "خطأ في تقديم الطلب",
-          description: error.message,
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "تم تقديم الطلب بنجاح",
-          description: "سيتم مراجعة طلبك والتواصل معك قريباً"
-        });
-        navigate('/dashboard/requests');
-      }
-    } catch (error) {
-      console.error('Error submitting request:', error);
+      if (error) throw error;
+
       toast({
-        title: "خطأ غير متوقع",
-        description: "حدث خطأ أثناء تقديم الطلب",
+        title: "تم إنشاء الطلب بنجاح",
+        description: `رقم الطلب: ${data.case_number}`,
+      });
+
+      navigate('/dashboard/requests');
+    } catch (error: any) {
+      console.error('Error creating request:', error);
+      toast({
+        title: "خطأ في إنشاء الطلب",
+        description: error.message || "حدث خطأ غير متوقع",
         variant: "destructive"
       });
     } finally {
@@ -129,124 +117,219 @@ const NewRequestPage = () => {
     }
   };
 
+  const caseTypes = [
+    { value: 'property', label: 'قضايا أملاك' },
+    { value: 'divorce', label: 'قضايا طلاق' },
+    { value: 'custody', label: 'قضايا حضانة' },
+    { value: 'domestic_violence', label: 'قضايا عنف أسري' },
+    { value: 'inheritance', label: 'قضايا ميراث' },
+    { value: 'employment', label: 'قضايا عمالية' },
+    { value: 'other', label: 'أخرى' }
+  ];
+
+  const priorities = [
+    { value: 1, label: 'عاجل جداً' },
+    { value: 2, label: 'عاجل' },
+    { value: 3, label: 'عادي' },
+    { value: 4, label: 'منخفض' },
+    { value: 5, label: 'منخفض جداً' }
+  ];
+
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center gap-4">
-        <Link to="/dashboard/requests">
-          <Button variant="outline" size="sm" className="gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            العودة
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-3xl font-bold">طلب استشارة جديد</h1>
-          <p className="text-muted-foreground">املئي النموذج أدناه لتقديم طلب استشارة قانونية</p>
-        </div>
+        <Button
+          variant="ghost" 
+          onClick={() => navigate('/dashboard/requests')}
+          className="gap-2"
+        >
+          <ArrowRight className="w-4 h-4" />
+          العودة للطلبات
+        </Button>
+      </div>
+      
+      <div>
+        <h1 className="text-3xl font-bold flex items-center gap-2">
+          <FileText className="w-8 h-8 text-primary" />
+          طلب جديد
+        </h1>
+        <p className="text-muted-foreground">أنشئي طلب استشارة قانونية جديد</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Scale className="w-5 h-5 text-primary" />
-            تفاصيل طلب الاستشارة
-          </CardTitle>
-          <CardDescription>
-            يرجى تقديم معلومات مفصلة عن القضية للحصول على أفضل استشارة قانونية
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="title">عنوان الطلب *</Label>
-            <Input
-              id="title"
-              placeholder="مثال: استشارة حول عقد العمل"
-              value={formData.title}
-              onChange={(e) => handleInputChange('title', e.target.value)}
-            />
-          </div>
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Form */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>تفاصيل الطلب</CardTitle>
+              <CardDescription>
+                املئي النموذج أدناه لإنشاء طلب استشارة قانونية
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Title */}
+                <div className="space-y-2">
+                  <Label htmlFor="title">عنوان الطلب *</Label>
+                  <Input
+                    id="title"
+                    type="text"
+                    placeholder="مثال: استشارة حول عقد عمل"
+                    value={formData.title}
+                    onChange={(e) => handleInputChange('title', e.target.value)}
+                    className={errors.title ? 'border-destructive' : ''}
+                  />
+                  {errors.title && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertTriangle className="w-4 h-4" />
+                      {errors.title}
+                    </p>
+                  )}
+                </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="case_type">نوع القضية *</Label>
-            <Select onValueChange={(value) => handleInputChange('case_type', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="اختاري نوع القضية" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="employment">قضايا العمل</SelectItem>
-                <SelectItem value="divorce">قضايا الطلاق</SelectItem>
-                <SelectItem value="custody">قضايا الحضانة</SelectItem>
-                <SelectItem value="domestic_violence">العنف الأسري</SelectItem>
-                <SelectItem value="inheritance">قضايا الميراث</SelectItem>
-                <SelectItem value="property">قضايا عقارية</SelectItem>
-                <SelectItem value="other">أخرى</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+                {/* Case Type */}
+                <div className="space-y-2">
+                  <Label htmlFor="case_type">نوع القضية *</Label>
+                  <Select 
+                    value={formData.case_type} 
+                    onValueChange={(value) => handleInputChange('case_type', value)}
+                  >
+                    <SelectTrigger className={errors.case_type ? 'border-destructive' : ''}>
+                      <SelectValue placeholder="اختر نوع القضية" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {caseTypes.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.case_type && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertTriangle className="w-4 h-4" />
+                      {errors.case_type}
+                    </p>
+                  )}
+                </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="priority">مستوى الأولوية</Label>
-            <Select onValueChange={(value) => handleInputChange('priority', parseInt(value))}>
-              <SelectTrigger>
-                <SelectValue placeholder="اختاري مستوى الأولوية" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">عاجل جداً</SelectItem>
-                <SelectItem value="2">عاجل</SelectItem>
-                <SelectItem value="3">عادي</SelectItem>
-                <SelectItem value="4">غير عاجل</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+                {/* Priority */}
+                <div className="space-y-2">
+                  <Label htmlFor="priority">الأولوية</Label>
+                  <Select 
+                    value={formData.priority.toString()} 
+                    onValueChange={(value) => handleInputChange('priority', parseInt(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {priorities.map((priority) => (
+                        <SelectItem key={priority.value} value={priority.value.toString()}>
+                          {priority.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">وصف تفصيلي للقضية *</Label>
-            <Textarea
-              id="description"
-              placeholder="يرجى وصف القضية بالتفصيل، مع ذكر جميع الوقائع والظروف المتعلقة بها..."
-              className="min-h-32"
-              value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-            />
-          </div>
+                {/* Description */}
+                <div className="space-y-2">
+                  <Label htmlFor="description">وصف المشكلة *</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="اشرحي تفاصيل المشكلة أو الموضوع الذي تحتاجين استشارة قانونية بشأنه..."
+                    rows={6}
+                    value={formData.description}
+                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    className={errors.description ? 'border-destructive' : ''}
+                  />
+                  <div className="flex justify-between items-center">
+                    {errors.description ? (
+                      <p className="text-sm text-destructive flex items-center gap-1">
+                        <AlertTriangle className="w-4 h-4" />
+                        {errors.description}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        {formData.description.length}/5000 حرف
+                      </p>
+                    )}
+                  </div>
+                </div>
 
-          <div className="flex gap-4">
-            <Button onClick={handleSubmit} disabled={isSubmitting} className="gap-2">
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  جاري التقديم...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  تقديم الطلب
-                </>
-              )}
-            </Button>
-            <Link to="/dashboard/requests">
-              <Button variant="outline" type="button">
-                إلغاء
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
+                {/* Submit Buttons */}
+                <div className="flex gap-4 pt-6">
+                  <Button type="submit" disabled={isSubmitting} className="gap-2">
+                    {isSubmitting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <CheckCircle className="w-4 h-4" />
+                    )}
+                    {isSubmitting ? 'جاري الإرسال...' : 'إرسال الطلب'}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => navigate('/dashboard/requests')}
+                    disabled={isSubmitting}
+                  >
+                    إلغاء
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
 
-      {/* Guidelines */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardHeader>
-          <CardTitle className="text-blue-900">إرشادات لتقديم طلب فعال</CardTitle>
-        </CardHeader>
-        <CardContent className="text-blue-800">
-          <ul className="space-y-2 text-sm">
-            <li>• كوني دقيقة ومفصلة في وصف القضية</li>
-            <li>• اذكري جميع الوقائع والأدلة المتاحة</li>
-            <li>• حددي الهدف المطلوب من الاستشارة</li>
-            <li>• في حالة الطوارئ، اتصلي بنا مباشرة</li>
-            <li>• ستتم مراجعة طلبك خلال 24-48 ساعة</li>
-          </ul>
-        </CardContent>
-      </Card>
+        {/* Guidelines */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-primary" />
+                إرشادات مهمة
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h4 className="font-medium mb-2">لطلب فعال:</h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• اكتبي عنواناً واضحاً ومحدداً</li>
+                  <li>• اختاري نوع القضية المناسب</li>
+                  <li>• قدمي تفاصيل كاملة ودقيقة</li>
+                  <li>• اذكري التواريخ المهمة</li>
+                </ul>
+              </div>
+              
+              <div>
+                <h4 className="font-medium mb-2">معلومات مفيدة:</h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• الأسماء الكاملة للأطراف</li>
+                  <li>• أرقام المستندات</li>
+                  <li>• المبالغ المالية (إن وجدت)</li>
+                  <li>• المواقع والعناوين</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>ماذا بعد الإرسال؟</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ol className="text-sm text-muted-foreground space-y-2">
+                <li>1. سيتم مراجعة طلبك خلال 24 ساعة</li>
+                <li>2. ستصلك رسالة تأكيد برقم الطلب</li>
+                <li>3. سيتم تعيين محامية متخصصة</li>
+                <li>4. ستصلك إشعارات بالتحديثات</li>
+              </ol>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };

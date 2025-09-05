@@ -19,6 +19,9 @@ import CasesPage from "./pages/dashboard/CasesPage";
 import DocumentsPage from "./pages/dashboard/DocumentsPage";
 import MessagesPage from "./pages/dashboard/MessagesPage";
 import ProfilePage from "./pages/dashboard/ProfilePage";
+import DatabaseManagement from "./pages/admin/DatabaseManagement";
+import SystemSettings from "./pages/admin/SystemSettings";
+import SecurityManagement from "./pages/admin/SecurityManagement";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +57,21 @@ const App = () => (
               <Route path="admin" element={
                 <ProtectedRoute requiredRole="admin">
                   <AdminDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="admin/database" element={
+                <ProtectedRoute requiredRole="admin">
+                  <DatabaseManagement />
+                </ProtectedRoute>
+              } />
+              <Route path="admin/settings" element={
+                <ProtectedRoute requiredRole="admin">
+                  <SystemSettings />
+                </ProtectedRoute>
+              } />
+              <Route path="admin/security" element={
+                <ProtectedRoute requiredRole="admin">
+                  <SecurityManagement />
                 </ProtectedRoute>
               } />
             </Route>

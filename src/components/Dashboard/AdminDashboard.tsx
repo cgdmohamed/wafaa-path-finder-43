@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Users, FileText, Calendar, Settings, Shield, Database } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Link } from 'react-router-dom';
 
 interface AdminStats {
   totalUsers: number;
@@ -246,8 +247,10 @@ const AdminDashboard = () => {
             <p className="text-sm text-muted-foreground mb-4">
               عرض إحصائيات قاعدة البيانات وإجراء النسخ الاحتياطي
             </p>
-            <Button variant="outline" className="w-full">
-              فتح إدارة قاعدة البيانات
+            <Button variant="outline" className="w-full" asChild>
+              <Link to="/dashboard/admin/database">
+                فتح إدارة قاعدة البيانات
+              </Link>
             </Button>
           </CardContent>
         </Card>
@@ -263,8 +266,10 @@ const AdminDashboard = () => {
             <p className="text-sm text-muted-foreground mb-4">
               تكوين إعدادات النظام العامة
             </p>
-            <Button variant="outline" className="w-full">
-              فتح الإعدادات
+            <Button variant="outline" className="w-full" asChild>
+              <Link to="/dashboard/admin/settings">
+                فتح الإعدادات
+              </Link>
             </Button>
           </CardContent>
         </Card>
@@ -280,8 +285,10 @@ const AdminDashboard = () => {
             <p className="text-sm text-muted-foreground mb-4">
               مراجعة سجل الأمان وإدارة الصلاحيات
             </p>
-            <Button variant="outline" className="w-full">
-              فتح إدارة الأمان
+            <Button variant="outline" className="w-full" asChild>
+              <Link to="/dashboard/admin/security">
+                فتح إدارة الأمان
+              </Link>
             </Button>
           </CardContent>
         </Card>
