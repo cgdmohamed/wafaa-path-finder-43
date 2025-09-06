@@ -209,7 +209,7 @@ const DashboardLayout = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       {/* Mobile header */}
       <div className="lg:hidden bg-card border-b border-border p-4 flex items-center justify-between">
-        <button onClick={() => setSidebarOpen(true)}>
+        <button onClick={() => setSidebarOpen(true)} data-testid="dashboard-sidebar-toggle">
           <Menu className="w-6 h-6" />
         </button>
         <div className="flex items-center gap-2">

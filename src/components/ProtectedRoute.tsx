@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { SkeletonCard } from '@/components/ui/skeleton-layouts';
@@ -18,6 +18,7 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     let isMounted = true;
@@ -149,7 +150,7 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
             <AlertTriangle className="w-12 h-12 text-destructive mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">خطأ في المصادقة</h2>
             <p className="text-muted-foreground mb-4">{authError}</p>
-            <Button onClick={() => window.location.reload()}>
+            <Button onClick={() => window.location.reload()} data-testid="auth-error-retry">
               إعادة المحاولة
             </Button>
           </CardContent>
@@ -182,10 +183,10 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
               الصلاحية المطلوبة: {requiredRole} | صلاحيتك الحالية: {userRole}
             </p>
             <div className="flex gap-2 justify-center">
-              <Button variant="outline" onClick={() => window.history.back()}>
+              <Button variant="outline" onClick={() => window.history.back()} data-testid="access-denied-back">
                 العودة
               </Button>
-              <Button onClick={() => window.location.href = '/dashboard'}>
+              <Button onClick={() => navigate('/dashboard')} data-testid="access-denied-dashboard">
                 لوحة التحكم
               </Button>
             </div>

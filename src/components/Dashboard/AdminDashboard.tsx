@@ -247,7 +247,7 @@ const AdminDashboard = () => {
             <p className="text-sm text-muted-foreground mb-4">
               عرض إحصائيات قاعدة البيانات وإجراء النسخ الاحتياطي
             </p>
-            <Button variant="outline" className="w-full" asChild>
+            <Button variant="outline" className="w-full" asChild data-testid="admin-database-nav">
               <Link to="/dashboard/admin/database">
                 فتح إدارة قاعدة البيانات
               </Link>
@@ -266,7 +266,7 @@ const AdminDashboard = () => {
             <p className="text-sm text-muted-foreground mb-4">
               تكوين إعدادات النظام العامة
             </p>
-            <Button variant="outline" className="w-full" asChild>
+            <Button variant="outline" className="w-full" asChild data-testid="admin-settings-nav">
               <Link to="/dashboard/admin/settings">
                 فتح الإعدادات
               </Link>
@@ -285,7 +285,7 @@ const AdminDashboard = () => {
             <p className="text-sm text-muted-foreground mb-4">
               مراجعة سجل الأمان وإدارة الصلاحيات
             </p>
-            <Button variant="outline" className="w-full" asChild>
+            <Button variant="outline" className="w-full" asChild data-testid="admin-security-nav">
               <Link to="/dashboard/admin/security">
                 فتح إدارة الأمان
               </Link>

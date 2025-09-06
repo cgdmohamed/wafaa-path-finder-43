@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 import { Menu, X, Phone, MessageCircle } from 'lucide-react';
 
 const Header = () => {
@@ -42,17 +43,17 @@ const Header = () => {
 
           {/* أزرار التواصل السريع */}
           <div className="hidden md:flex items-center space-x-4 rtl:space-x-reverse">
-            <Button variant="outline" size="sm" className="gap-2" asChild>
+            <Button variant="outline" size="sm" className="gap-2" asChild data-testid="header-contact-button">
               <a href="#contact">
                 <Phone className="w-4 h-4" />
                 اتصل بنا
               </a>
             </Button>
-            <Button size="sm" className="gap-2 bg-gradient-to-r from-primary to-primary-light hover:from-primary-dark hover:to-primary" asChild>
-              <a href="/auth">
+            <Button size="sm" className="gap-2 bg-gradient-to-r from-primary to-primary-light hover:from-primary-dark hover:to-primary" asChild data-testid="header-auth-button">
+              <Link to="/auth">
                 <MessageCircle className="w-4 h-4" />
                 استشارة فورية
-              </a>
+              </Link>
             </Button>
           </div>
 
@@ -60,6 +61,7 @@ const Header = () => {
           <button
             className="md:hidden"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            data-testid="header-mobile-menu-toggle"
           >
             {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -80,17 +82,17 @@ const Header = () => {
                 </a>
               ))}
               <div className="flex flex-col space-y-2 pt-4 border-t border-border">
-                <Button variant="outline" size="sm" className="gap-2" asChild>
+                <Button variant="outline" size="sm" className="gap-2" asChild data-testid="header-mobile-contact-button">
                   <a href="#contact">
                     <Phone className="w-4 h-4" />
                     اتصل بنا
                   </a>
                 </Button>
-                <Button size="sm" className="gap-2 bg-gradient-to-r from-primary to-primary-light" asChild>
-                  <a href="/auth">
+                <Button size="sm" className="gap-2 bg-gradient-to-r from-primary to-primary-light" asChild data-testid="header-mobile-auth-button">
+                  <Link to="/auth">
                     <MessageCircle className="w-4 h-4" />
                     استشارة فورية
-                  </a>
+                  </Link>
                 </Button>
               </div>
             </nav>

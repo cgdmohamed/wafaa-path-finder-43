@@ -34,6 +34,7 @@ class ErrorBoundary extends Component<Props, State> {
   };
 
   handleGoHome = () => {
+    // Use relative redirect since we can't use navigate in class component
     window.location.href = '/';
   };
 
@@ -65,11 +66,11 @@ class ErrorBoundary extends Component<Props, State> {
                 </div>
               )}
               <div className="flex gap-2 justify-center">
-                <Button onClick={this.handleRetry} variant="outline" className="gap-2">
+                <Button onClick={this.handleRetry} variant="outline" className="gap-2" data-testid="error-boundary-retry">
                   <RefreshCw className="w-4 h-4" />
                   إعادة المحاولة
                 </Button>
-                <Button onClick={this.handleGoHome} className="gap-2">
+                <Button onClick={this.handleGoHome} className="gap-2" data-testid="error-boundary-home">
                   <Home className="w-4 h-4" />
                   العودة للرئيسية
                 </Button>
