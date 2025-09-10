@@ -146,6 +146,22 @@ const Initiatives = () => {
     });
   };
 
+  const handleInitiativeDetails = (initiativeId: string) => {
+    // Navigate to initiative detail page or open modal with more details
+    toast({
+      title: "تفاصيل المبادرة",
+      description: "سيتم إضافة صفحة تفاصيل المبادرة قريباً",
+    });
+  };
+
+  const handleStaticInitiativeDetails = (index: number) => {
+    // Handle static initiative details
+    toast({
+      title: "تفاصيل المبادرة",
+      description: "سيتم إضافة تفاصيل أكثر للمبادرة قريباً",
+    });
+  };
+
   return (
     <section id="initiatives" className="py-20 bg-gradient-to-b from-secondary/10 to-background">
       <div className="container mx-auto px-4">
@@ -250,7 +266,11 @@ const Initiatives = () => {
                     سجل الآن
                   </Button>
                 ) : (
-                  <Button variant="outline" className="w-full hover:bg-primary hover:text-primary-foreground">
+                  <Button 
+                    variant="outline" 
+                    className="w-full hover:bg-primary hover:text-primary-foreground"
+                    onClick={() => handleInitiativeDetails(initiative.id)}
+                  >
                     تعرف على التفاصيل
                   </Button>
                 )}
@@ -293,7 +313,11 @@ const Initiatives = () => {
                       </div>
                     ))}
                   </div>
-                  <Button variant="outline" className="w-full hover:bg-primary hover:text-primary-foreground">
+                  <Button 
+                    variant="outline" 
+                    className="w-full hover:bg-primary hover:text-primary-foreground"
+                    onClick={() => handleStaticInitiativeDetails(index)}
+                  >
                     تعرف على التفاصيل
                   </Button>
                 </CardContent>
