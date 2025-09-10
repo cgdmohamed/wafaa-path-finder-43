@@ -10,10 +10,18 @@ import { Heart } from 'lucide-react';
 interface InitiativeRegistrationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  type: 'volunteer' | 'suggest' | 'event';
+  type: 'volunteer' | 'suggest' | 'event' | 'initiative';
+  initiativeId?: string;
+  initiativeTitle?: string;
 }
 
-const InitiativeRegistrationModal = ({ isOpen, onClose, type }: InitiativeRegistrationModalProps) => {
+const InitiativeRegistrationModal = ({ 
+  isOpen, 
+  onClose, 
+  type, 
+  initiativeId, 
+  initiativeTitle 
+}: InitiativeRegistrationModalProps) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -43,6 +51,12 @@ const InitiativeRegistrationModal = ({ isOpen, onClose, type }: InitiativeRegist
           description: 'سيتم التواصل معك لتأكيد التسجيل ومشاركة تفاصيل الفعالية',
           messagePlaceholder: 'أخبرينا عن اهتمامك بالفعالية وأي متطلبات خاصة...'
         };
+      case 'initiative':
+        return {
+          title: `التسجيل في: ${initiativeTitle || 'المبادرة'}`,
+          description: 'سجلي بياناتك للانضمام إلى هذه المبادرة وسيتم التواصل معك قريباً',
+          messagePlaceholder: 'أخبرينا عن اهتمامك بهذه المبادرة وما تتوقعينه منها...'
+        };
       default:
         return {
           title: 'تسجيل',
@@ -59,25 +73,47 @@ const InitiativeRegistrationModal = ({ isOpen, onClose, type }: InitiativeRegist
     try {
       const { data: user } = await supabase.auth.getUser();
       
-      // Create a general initiative registration (we can create a separate table for suggestions later)
-      const { error } = await supabase
-        .from('contact_messages')
-        .insert({
-          sender_id: user.user?.id || null,
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          subject: type === 'volunteer' ? 'طلب تطوع' : type === 'suggest' ? 'اقتراح مبادرة' : 'تسجيل في فعالية',
-          message: formData.message,
-          urgency: 'normal'
+      if (type === 'initiative' && initiativeId) {
+        // Register for specific initiative
+        const { error } = await supabase
+          .from('initiative_registrations')
+          .insert({
+            initiative_id: initiativeId,
+            user_id: user.user?.id || null,
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            message: formData.message,
+            status: 'pending'
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "تم التسجيل بنجاح",
+          description: "سيتم مراجعة تسجيلك والتواصل معك لتأكيد الاشتراك في المبادرة"
         });
+      } else {
+        // For other types, save to contact messages
+        const { error } = await supabase
+          .from('contact_messages')
+          .insert({
+            sender_id: user.user?.id || null,
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            subject: type === 'volunteer' ? 'طلب تطوع' : type === 'suggest' ? 'اقتراح مبادرة' : 'تسجيل في فعالية',
+            message: formData.message,
+            urgency: 'normal'
+          });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: "تم إرسال طلبك بنجاح",
-        description: "سيتم مراجعة طلبك والتواصل معك قريباً"
-      });
+        toast({
+          title: "تم إرسال طلبك بنجاح",
+          description: "سيتم مراجعة طلبك والتواصل معك قريباً"
+        });
+      }
 
       // Reset form and close modal
       setFormData({

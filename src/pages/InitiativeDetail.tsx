@@ -10,11 +10,14 @@ import { ar } from "date-fns/locale";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import InitiativeRegistrationModal from "@/components/modals/InitiativeRegistrationModal";
 
 const InitiativeDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
 
   const { data: initiative, isLoading } = useQuery({
     queryKey: ["initiative", id],
@@ -86,10 +89,7 @@ const InitiativeDetail = () => {
     if (initiative && 'registration_link' in initiative && initiative.registration_link) {
       window.open(initiative.registration_link, "_blank");
     } else {
-      toast({
-        title: "التسجيل",
-        description: "سيتم إضافة رابط التسجيل قريباً",
-      });
+      setIsRegistrationModalOpen(true);
     }
   };
 
@@ -304,6 +304,15 @@ const InitiativeDetail = () => {
       </main>
 
       <Footer />
+
+      {/* Registration Modal */}
+      <InitiativeRegistrationModal
+        isOpen={isRegistrationModalOpen}
+        onClose={() => setIsRegistrationModalOpen(false)}
+        type="initiative"
+        initiativeId={initiative?.id}
+        initiativeTitle={initiative?.title}
+      />
     </div>
   );
 };
