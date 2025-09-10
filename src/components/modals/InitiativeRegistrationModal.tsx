@@ -10,7 +10,7 @@ import { Heart } from 'lucide-react';
 interface InitiativeRegistrationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  type: 'volunteer' | 'suggest';
+  type: 'volunteer' | 'suggest' | 'event';
 }
 
 const InitiativeRegistrationModal = ({ isOpen, onClose, type }: InitiativeRegistrationModalProps) => {
@@ -24,18 +24,31 @@ const InitiativeRegistrationModal = ({ isOpen, onClose, type }: InitiativeRegist
   const { toast } = useToast();
 
   const getModalContent = () => {
-    if (type === 'volunteer') {
-      return {
-        title: 'تطوعي معنا',
-        description: 'انضمي إلى فريق المتطوعات وكوني جزءاً من التغيير الإيجابي',
-        messagePlaceholder: 'أخبرينا عن خبراتك واهتماماتك والأوقات المناسبة للتطوع...'
-      };
-    } else {
-      return {
-        title: 'اقترحي مبادرة',
-        description: 'شاركينا أفكارك لمبادرات جديدة تخدم المجتمع',
-        messagePlaceholder: 'اكتبي تفاصيل المبادرة المقترحة، أهدافها، والفئة المستهدفة...'
-      };
+    switch (type) {
+      case 'volunteer':
+        return {
+          title: 'تطوعي معنا',
+          description: 'انضمي إلى فريق المتطوعات وكوني جزءاً من التغيير الإيجابي',
+          messagePlaceholder: 'أخبرينا عن خبراتك واهتماماتك والأوقات المناسبة للتطوع...'
+        };
+      case 'suggest':
+        return {
+          title: 'اقترحي مبادرة',
+          description: 'شاركينا أفكارك لمبادرات جديدة تخدم المجتمع',
+          messagePlaceholder: 'اكتبي تفاصيل المبادرة المقترحة، أهدافها، والفئة المستهدفة...'
+        };
+      case 'event':
+        return {
+          title: 'التسجيل في الفعالية',
+          description: 'سيتم التواصل معك لتأكيد التسجيل ومشاركة تفاصيل الفعالية',
+          messagePlaceholder: 'أخبرينا عن اهتمامك بالفعالية وأي متطلبات خاصة...'
+        };
+      default:
+        return {
+          title: 'تسجيل',
+          description: 'املأي النموذج للتسجيل',
+          messagePlaceholder: 'اكتبي رسالتك هنا...'
+        };
     }
   };
 
@@ -54,7 +67,7 @@ const InitiativeRegistrationModal = ({ isOpen, onClose, type }: InitiativeRegist
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
-          subject: type === 'volunteer' ? 'طلب تطوع' : 'اقتراح مبادرة',
+          subject: type === 'volunteer' ? 'طلب تطوع' : type === 'suggest' ? 'اقتراح مبادرة' : 'تسجيل في فعالية',
           message: formData.message,
           urgency: 'normal'
         });

@@ -40,7 +40,7 @@ const Initiatives = () => {
   const [events, setEvents] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isEventsLoading, setIsEventsLoading] = useState(true);
-  const [modalType, setModalType] = useState<'volunteer' | 'suggest' | null>(null);
+  const [modalType, setModalType] = useState<'volunteer' | 'suggest' | 'event' | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -133,10 +133,12 @@ const Initiatives = () => {
     }
   ];
 
-  const handleEventRegistration = (eventId: string) => {
+  const handleEventRegistration = (event: any) => {
+    setModalType('event');
+    // You could set a specific event here for registration
     toast({
       title: "التسجيل في الفعالية",
-      description: "سيتم تفعيل نظام التسجيل قريباً"
+      description: `سيتم تواصل معك قريباً للتأكيد على التسجيل في "${event.title}"`
     });
   };
 
@@ -347,7 +349,7 @@ const Initiatives = () => {
                       variant="outline" 
                       size="sm" 
                       className="w-full gap-2"
-                      onClick={() => handleEventRegistration(event.id)}
+                      onClick={() => handleEventRegistration(event)}
                     >
                       <ExternalLink className="w-4 h-4" />
                       سجل الآن

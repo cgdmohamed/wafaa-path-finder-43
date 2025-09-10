@@ -1,8 +1,24 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Scale, Heart, Shield, MessageCircle } from 'lucide-react';
+import ServiceRequestModal from './modals/ServiceRequestModal';
 
 const Hero = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<any>(null);
+
+  const handleConsultationRequest = () => {
+    setSelectedService({
+      id: 'emergency-consultation',
+      title: 'استشارة عاجلة',
+      description: 'استشارة قانونية عاجلة ومتخصصة',
+      type: 'emergency',
+      icon_name: 'MessageCircle'
+    });
+    setIsModalOpen(true);
+  };
+
   return (
     <section id="home" className="relative overflow-hidden bg-gradient-to-br from-background via-secondary/30 to-accent/20 py-20 lg:py-32">
       {/* العناصر التزيينية */}
@@ -63,13 +79,11 @@ const Hero = () => {
                 variant="outline" 
                 size="lg" 
                 className="text-lg px-8 py-6 gap-3 border-primary hover:bg-primary hover:text-primary-foreground"
-                asChild
+                onClick={handleConsultationRequest}
                 data-testid="hero-consultation-cta"
               >
-                <Link to="/auth">
-                  استشارة عاجلة
-                  <MessageCircle className="w-5 h-5" />
-                </Link>
+                استشارة عاجلة
+                <MessageCircle className="w-5 h-5" />
               </Button>
             </div>
           </div>
@@ -107,6 +121,12 @@ const Hero = () => {
           </div>
         </div>
       </div>
+
+      <ServiceRequestModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        service={selectedService}
+      />
     </section>
   );
 };

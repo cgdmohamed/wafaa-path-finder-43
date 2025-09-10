@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -186,13 +187,23 @@ const Services = () => {
                           ))}
                         </div>
                       )}
-                      <Button 
-                        variant="outline" 
-                        className="w-full mt-6 hover:bg-primary hover:text-primary-foreground"
-                        onClick={() => handleServiceRequest(service)}
-                      >
-                        تعرف على المزيد
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          className="flex-1 hover:bg-primary hover:text-primary-foreground"
+                          asChild
+                        >
+                          <Link to={`/service/${service.id}`}>
+                            التفاصيل
+                          </Link>
+                        </Button>
+                        <Button 
+                          className="flex-1"
+                          onClick={() => handleServiceRequest(service)}
+                        >
+                          طلب الخدمة
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 );
@@ -211,11 +222,32 @@ const Services = () => {
               فريقنا متاح على مدار الساعة لتقديم الدعم والاستشارة القانونية العاجلة
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-gradient-to-r from-primary to-primary-light gap-2">
+              <Button 
+                size="lg" 
+                className="bg-gradient-to-r from-primary to-primary-light gap-2"
+                onClick={() => handleServiceRequest({ 
+                  id: 'emergency-call', 
+                  title: 'استشارة هاتفية عاجلة',
+                  description: 'استشارة قانونية فورية عبر الهاتف',
+                  type: 'emergency',
+                  icon_name: 'Phone'
+                })}
+              >
                 <Phone className="w-5 h-5" />
                 اتصل الآن
               </Button>
-              <Button variant="outline" size="lg" className="gap-2 border-primary hover:bg-primary hover:text-primary-foreground">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="gap-2 border-primary hover:bg-primary hover:text-primary-foreground"
+                onClick={() => handleServiceRequest({
+                  id: 'emergency-chat',
+                  title: 'محادثة فورية',
+                  description: 'استشارة قانونية فورية عبر المحادثة',
+                  type: 'emergency',
+                  icon_name: 'MessageSquare'
+                })}
+              >
                 <MessageSquare className="w-5 h-5" />
                 محادثة فورية
               </Button>
