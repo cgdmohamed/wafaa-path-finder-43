@@ -240,6 +240,51 @@ export type Database = {
         }
         Relationships: []
       }
+      cases_new: {
+        Row: {
+          assigned_lawyer_id: string | null
+          case_type: string
+          client_id: string
+          court_reference: string | null
+          created_at: string
+          description: string | null
+          id: string
+          next_hearing_date: string | null
+          priority: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_lawyer_id?: string | null
+          case_type: string
+          client_id: string
+          court_reference?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          next_hearing_date?: string | null
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_lawyer_id?: string | null
+          case_type?: string
+          client_id?: string
+          court_reference?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          next_hearing_date?: string | null
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       consultation_types: {
         Row: {
           created_at: string
@@ -416,6 +461,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      initiatives: {
+        Row: {
+          created_at: string
+          current_participants: number | null
+          description: string
+          end_date: string | null
+          id: string
+          image_url: string | null
+          is_featured: boolean | null
+          location: string | null
+          max_participants: number | null
+          organizer_id: string | null
+          registration_link: string | null
+          start_date: string | null
+          status: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_participants?: number | null
+          description: string
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_featured?: boolean | null
+          location?: string | null
+          max_participants?: number | null
+          organizer_id?: string | null
+          registration_link?: string | null
+          start_date?: string | null
+          status?: string
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_participants?: number | null
+          description?: string
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_featured?: boolean | null
+          location?: string | null
+          max_participants?: number | null
+          organizer_id?: string | null
+          registration_link?: string | null
+          start_date?: string | null
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       legal_resources: {
         Row: {
