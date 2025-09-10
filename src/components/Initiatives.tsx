@@ -73,13 +73,17 @@ const Initiatives = () => {
 
   const fetchEvents = async () => {
     try {
+      const today = new Date().toISOString().split('T')[0];
+      console.log('Fetching events from date:', today);
+      
       const { data, error } = await supabase
         .from('events')
         .select('*')
         .eq('is_active', true)
-        .gte('event_date', new Date().toISOString().split('T')[0])
+        .gte('event_date', today)
         .order('event_date');
 
+      console.log('Events fetched:', data);
       if (error) throw error;
       setEvents(data || []);
     } catch (error: any) {
