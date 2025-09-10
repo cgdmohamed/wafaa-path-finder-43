@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, FileText, Calendar, Settings, Shield, Database } from 'lucide-react';
+import { Users, FileText, Calendar, Settings, Shield, Database, DollarSign } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
@@ -288,6 +288,25 @@ const AdminDashboard = () => {
             <Button variant="outline" className="w-full" asChild data-testid="admin-security-nav">
               <Link to="/dashboard/admin/security">
                 فتح إدارة الأمان
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
+              إدارة أنواع الاستشارات
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              إدارة وتحديد أسعار أنواع الاستشارات المختلفة
+            </p>
+            <Button variant="outline" className="w-full" asChild data-testid="admin-consultations-nav">
+              <Link to="/dashboard/admin/consultations">
+                فتح إدارة الاستشارات
               </Link>
             </Button>
           </CardContent>

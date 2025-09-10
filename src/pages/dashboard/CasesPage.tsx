@@ -141,8 +141,28 @@ const CasesPage = () => {
                     تم الإنشاء: {new Date(caseItem.created_at).toLocaleDateString('ar')}
                   </span>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">عرض التفاصيل</Button>
-                    <Button variant="outline" size="sm">تحديث</Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        // TODO: Navigate to case details page when implemented
+                        console.log('View case details:', caseItem.id);
+                      }}
+                      data-testid={`view-case-${caseItem.id}`}
+                    >
+                      عرض التفاصيل
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        // TODO: Open case update modal when implemented
+                        console.log('Update case:', caseItem.id);
+                      }}
+                      data-testid={`update-case-${caseItem.id}`}
+                    >
+                      تحديث
+                    </Button>
                   </div>
                 </div>
               </CardContent>

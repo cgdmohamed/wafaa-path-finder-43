@@ -23,6 +23,7 @@ import NotificationsCenter from "./pages/dashboard/NotificationsCenter";
 import DatabaseManagement from "./pages/admin/DatabaseManagement";
 import SystemSettings from "./pages/admin/SystemSettings";
 import SecurityManagement from "./pages/admin/SecurityManagement";
+import ConsultationManagement from "./pages/admin/ConsultationManagement";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +75,11 @@ const App = () => (
               <Route path="admin/security" element={
                 <ProtectedRoute requiredRole="admin">
                   <SecurityManagement />
+                </ProtectedRoute>
+              } />
+              <Route path="admin/consultations" element={
+                <ProtectedRoute requiredRole="admin">
+                  <ConsultationManagement />
                 </ProtectedRoute>
               } />
             </Route>

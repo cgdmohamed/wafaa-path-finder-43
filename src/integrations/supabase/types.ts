@@ -79,6 +79,72 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          resource: string | null
+          status: string
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          resource?: string | null
+          status?: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          resource?: string | null
+          status?: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      backups: {
+        Row: {
+          backup_type: string
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          file_size: number | null
+          id: string
+          status: string
+        }
+        Insert: {
+          backup_type?: string
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          file_size?: number | null
+          id?: string
+          status?: string
+        }
+        Update: {
+          backup_type?: string
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          file_size?: number | null
+          id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       case_updates: {
         Row: {
           case_id: string
@@ -255,6 +321,30 @@ export type Database = {
           status?: Database["public"]["Enums"]["message_status"]
           subject?: string
           urgency?: Database["public"]["Enums"]["message_priority"]
+        }
+        Relationships: []
+      }
+      db_metrics: {
+        Row: {
+          created_at: string
+          id: string
+          metric_data: Json | null
+          metric_name: string
+          metric_value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metric_data?: Json | null
+          metric_name: string
+          metric_value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metric_data?: Json | null
+          metric_name?: string
+          metric_value?: string
         }
         Relationships: []
       }
@@ -447,6 +537,63 @@ export type Database = {
         }
         Relationships: []
       }
+      security_reports: {
+        Row: {
+          created_at: string
+          file_size: number | null
+          generated_at: string | null
+          id: string
+          name: string
+          period_end: string
+          period_start: string
+          report_type: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          file_size?: number | null
+          generated_at?: string | null
+          id?: string
+          name: string
+          period_end: string
+          period_start: string
+          report_type: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          file_size?: number | null
+          generated_at?: string | null
+          id?: string
+          name?: string
+          period_end?: string
+          period_start?: string
+          report_type?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      system_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           granted_at: string
@@ -490,6 +637,22 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_db_overview: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          db_size: string
+          total_records: number
+          total_tables: number
+        }[]
+      }
+      get_table_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          record_count: number
+          table_name: string
+          table_size: string
+        }[]
+      }
       get_user_role: {
         Args: { user_uuid: string }
         Returns: Database["public"]["Enums"]["user_role"]
@@ -500,6 +663,18 @@ export type Database = {
           user_uuid: string
         }
         Returns: boolean
+      }
+      log_audit_event: {
+        Args: {
+          p_action?: string
+          p_details?: Json
+          p_ip_address?: string
+          p_resource?: string
+          p_status?: string
+          p_user_email?: string
+          p_user_id?: string
+        }
+        Returns: string
       }
     }
     Enums: {
