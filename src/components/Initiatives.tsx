@@ -1,6 +1,9 @@
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Users, 
   Shield, 
@@ -12,8 +15,58 @@ import {
   ExternalLink
 } from 'lucide-react';
 
+interface Initiative {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  status: string;
+  start_date: string | null;
+  end_date: string | null;
+  location: string | null;
+  max_participants: number | null;
+  current_participants: number;
+  registration_link: string | null;
+  image_url: string | null;
+  is_featured: boolean;
+  organizer_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 const Initiatives = () => {
-  const initiatives = [
+  const [initiatives, setInitiatives] = useState<Initiative[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchInitiatives();
+  }, []);
+
+  const fetchInitiatives = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('initiatives')
+        .select('*')
+        .eq('status', 'active')
+        .order('is_featured', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setInitiatives(data || []);
+    } catch (error: any) {
+      console.error('Error fetching initiatives:', error);
+      toast({
+        title: "خطأ في تحميل المبادرات",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const staticInitiatives = [
     {
       icon: Users,
       title: "مبادرة الصلح ودياً",
@@ -87,24 +140,50 @@ const Initiatives = () => {
 
         {/* المبادرات الرئيسية */}
         <div className="grid md:grid-cols-2 gap-8 mb-16">
-          {initiatives.map((initiative, index) => (
-            <Card key={index} className="border border-border/50 hover:shadow-xl transition-all">
+          {isLoading ? (
+            Array.from({ length: 4 }).map((_, index) => (
+              <Card key={index} className="border border-border/50">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-muted rounded-xl animate-pulse"></div>
+                      <div className="space-y-2">
+                        <div className="h-6 w-32 bg-muted rounded animate-pulse"></div>
+                        <div className="h-4 w-24 bg-muted rounded animate-pulse"></div>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="h-4 w-full bg-muted rounded animate-pulse"></div>
+                    <div className="h-4 w-3/4 bg-muted rounded animate-pulse"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : initiatives.length > 0 ? (
+            initiatives.map((initiative) => (
+            <Card key={initiative.id} className="border border-border/50 hover:shadow-xl transition-all">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 ${initiative.color} rounded-xl flex items-center justify-center`}>
-                      <initiative.icon className="w-6 h-6 text-primary" />
+                    <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                      <Users className="w-6 h-6 text-primary" />
                     </div>
                     <div>
                       <CardTitle className="text-xl text-right">{initiative.title}</CardTitle>
                       <div className="flex items-center gap-2 mt-2">
                         <Badge 
-                          variant={initiative.status === 'نشطة' ? 'default' : 'secondary'}
+                          variant={initiative.status === 'active' ? 'default' : 'secondary'}
                           className="text-xs"
                         >
-                          {initiative.status}
+                          {initiative.status === 'active' ? 'نشطة' : 'غير نشطة'}
                         </Badge>
-                        <span className="text-sm text-muted-foreground">{initiative.participants}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {initiative.current_participants} مشارك
+                          {initiative.max_participants && ` من ${initiative.max_participants}`}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -115,19 +194,92 @@ const Initiatives = () => {
                   {initiative.description}
                 </p>
                 <div className="grid grid-cols-2 gap-2 mb-6">
-                  {initiative.features.map((feature, featureIndex) => (
-                    <div key={featureIndex} className="flex items-center justify-end gap-2">
-                      <span className="text-sm text-muted-foreground">{feature}</span>
+                  <div className="flex items-center justify-end gap-2">
+                    <span className="text-sm text-muted-foreground">نوع: {initiative.type}</span>
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  </div>
+                  {initiative.location && (
+                    <div className="flex items-center justify-end gap-2">
+                      <span className="text-sm text-muted-foreground">{initiative.location}</span>
                       <div className="w-2 h-2 bg-primary rounded-full"></div>
                     </div>
-                  ))}
+                  )}
+                  {initiative.start_date && (
+                    <div className="flex items-center justify-end gap-2">
+                      <span className="text-sm text-muted-foreground">
+                        {new Date(initiative.start_date).toLocaleDateString('ar')}
+                      </span>
+                      <div className="w-2 h-2 bg-primary rounded-full"></div>
+                    </div>
+                  )}
+                  {initiative.end_date && (
+                    <div className="flex items-center justify-end gap-2">
+                      <span className="text-sm text-muted-foreground">
+                        حتى {new Date(initiative.end_date).toLocaleDateString('ar')}
+                      </span>
+                      <div className="w-2 h-2 bg-primary rounded-full"></div>
+                    </div>
+                  )}
                 </div>
-                <Button variant="outline" className="w-full hover:bg-primary hover:text-primary-foreground">
-                  تعرف على التفاصيل
-                </Button>
+                {initiative.registration_link ? (
+                  <Button 
+                    variant="outline" 
+                    className="w-full hover:bg-primary hover:text-primary-foreground"
+                    onClick={() => window.open(initiative.registration_link!, '_blank')}
+                  >
+                    سجل الآن
+                  </Button>
+                ) : (
+                  <Button variant="outline" className="w-full hover:bg-primary hover:text-primary-foreground">
+                    تعرف على التفاصيل
+                  </Button>
+                )}
               </CardContent>
             </Card>
-          ))}
+            ))
+          ) : (
+            staticInitiatives.map((initiative, index) => (
+              <Card key={index} className="border border-border/50 hover:shadow-xl transition-all">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-12 h-12 ${initiative.color} rounded-xl flex items-center justify-center`}>
+                        <initiative.icon className="w-6 h-6 text-primary" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl text-right">{initiative.title}</CardTitle>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge 
+                            variant={initiative.status === 'نشطة' ? 'default' : 'secondary'}
+                            className="text-xs"
+                          >
+                            {initiative.status}
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">{initiative.participants}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground mb-6 text-right leading-relaxed">
+                    {initiative.description}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 mb-6">
+                    {initiative.features.map((feature, featureIndex) => (
+                      <div key={featureIndex} className="flex items-center justify-end gap-2">
+                        <span className="text-sm text-muted-foreground">{feature}</span>
+                        <div className="w-2 h-2 bg-primary rounded-full"></div>
+                      </div>
+                    ))}
+                  </div>
+                  <Button variant="outline" className="w-full hover:bg-primary hover:text-primary-foreground">
+                    تعرف على التفاصيل
+                  </Button>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
 
         {/* الفعاليات القادمة */}

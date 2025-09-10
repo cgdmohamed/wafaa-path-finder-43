@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -24,8 +26,10 @@ const Contact = () => {
     phone: '',
     subject: '',
     message: '',
-    urgency: 'عادي'
+    urgency: 'normal'
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const contactMethods = [
     {
@@ -75,10 +79,47 @@ const Contact = () => {
     }
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log('Form submitted:', formData);
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await supabase
+        .from('contact_messages')
+        .insert({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          subject: formData.subject,
+          message: formData.message,
+          urgency: formData.urgency as 'normal' | 'high' | 'low' | 'urgent'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "تم إرسال رسالتك بنجاح",
+        description: "سيتم الرد عليك خلال 24 ساعة"
+      });
+
+      // Reset form
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        subject: '',
+        message: '',
+        urgency: 'normal'
+      });
+    } catch (error: any) {
+      toast({
+        title: "خطأ في إرسال الرسالة",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -242,10 +283,10 @@ const Contact = () => {
                         onChange={(e) => handleInputChange('urgency', e.target.value)}
                         className="w-full px-3 py-2 border border-input rounded-md text-right"
                       >
-                        <option value="عادي">عادي</option>
-                        <option value="هام">هام</option>
-                        <option value="عاجل">عاجل</option>
-                        <option value="طارئ">طارئ</option>
+                        <option value="normal">عادي</option>
+                        <option value="high">هام</option>
+                        <option value="urgent">عاجل</option>
+                        <option value="low">منخفض</option>
                       </select>
                     </div>
                   </div>
@@ -269,9 +310,14 @@ const Contact = () => {
                     </p>
                   </div>
 
-                  <Button type="submit" size="lg" className="w-full bg-gradient-to-r from-primary to-primary-light gap-2">
+                  <Button 
+                    type="submit" 
+                    size="lg" 
+                    className="w-full bg-gradient-to-r from-primary to-primary-light gap-2"
+                    disabled={isSubmitting}
+                  >
                     <Send className="w-5 h-5" />
-                    إرسال الرسالة
+                    {isSubmitting ? 'جاري الإرسال...' : 'إرسال الرسالة'}
                   </Button>
                 </form>
               </CardContent>

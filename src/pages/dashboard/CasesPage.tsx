@@ -8,11 +8,11 @@ import { useToast } from '@/hooks/use-toast';
 
 interface Case {
   id: string;
-  case_number: string;
+  case_number?: string;
   title: string;
   status: string;
   case_type: string;
-  priority: number;
+  priority: number | string;
   created_at: string;
   next_hearing_date?: string;
 }
@@ -28,19 +28,53 @@ const CasesPage = () => {
 
   const fetchCases = async () => {
     try {
-      const { data, error } = await supabase
-        .from('cases')
+      // Try to fetch from cases_new first, then fallback to cases table
+      let { data, error } = await supabase
+        .from('cases_new')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
-        toast({
-          title: "خطأ في تحميل القضايا",
-          description: error.message,
-          variant: "destructive"
-        });
+        // Fallback to cases table
+        const { data: casesData, error: casesError } = await supabase
+          .from('cases')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (casesError) {
+          toast({
+            title: "خطأ في تحميل القضايا",
+            description: casesError.message,
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        // Map cases table data to our interface
+        const mappedData = (casesData || []).map((item: any) => ({
+          id: item.id,
+          case_number: item.case_number,
+          title: item.title,
+          status: item.status,
+          case_type: item.case_type,
+          priority: item.priority,
+          created_at: item.created_at,
+          next_hearing_date: item.next_hearing_date
+        }));
+        setCases(mappedData);
       } else {
-        setCases(data || []);
+        // Map cases_new table data to our interface
+        const mappedData = (data || []).map((item: any) => ({
+          id: item.id,
+          case_number: item.case_number || 'غير محدد',
+          title: item.title,
+          status: item.status,
+          case_type: item.case_type,
+          priority: item.priority,
+          created_at: item.created_at,
+          next_hearing_date: item.next_hearing_date
+        }));
+        setCases(mappedData);
       }
     } catch (error) {
       console.error('Error fetching cases:', error);
@@ -51,7 +85,8 @@ const CasesPage = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'default';
+      case 'active': 
+      case 'open': return 'default';
       case 'initial': return 'secondary';
       case 'closed': return 'outline';
       case 'on_hold': return 'destructive';
@@ -59,7 +94,12 @@ const CasesPage = () => {
     }
   };
 
-  const getPriorityColor = (priority: number) => {
+  const getPriorityColor = (priority: number | string) => {
+    if (typeof priority === 'string') {
+      if (priority === 'high') return 'destructive';
+      if (priority === 'normal') return 'secondary';
+      return 'outline';
+    }
     if (priority <= 2) return 'destructive';
     if (priority <= 3) return 'secondary';
     return 'outline';
@@ -112,7 +152,7 @@ const CasesPage = () => {
                   <div>
                     <CardTitle className="text-lg">{caseItem.title}</CardTitle>
                     <CardDescription className="flex items-center gap-4 mt-2">
-                      <span>رقم القضية: {caseItem.case_number}</span>
+                      <span>رقم القضية: {caseItem.case_number || 'غير محدد'}</span>
                       <span>النوع: {caseItem.case_type}</span>
                       {caseItem.next_hearing_date && (
                         <span className="flex items-center gap-1">
@@ -125,12 +165,15 @@ const CasesPage = () => {
                   <div className="flex gap-2">
                     <Badge variant={getStatusColor(caseItem.status)}>
                       {caseItem.status === 'active' && 'نشطة'}
+                      {caseItem.status === 'open' && 'مفتوحة'}
                       {caseItem.status === 'initial' && 'مبدئية'}
                       {caseItem.status === 'closed' && 'مغلقة'}
                       {caseItem.status === 'on_hold' && 'معلقة'}
                     </Badge>
                     <Badge variant={getPriorityColor(caseItem.priority)}>
-                      أولوية {caseItem.priority}
+                      {typeof caseItem.priority === 'string' 
+                        ? (caseItem.priority === 'high' ? 'عالية' : caseItem.priority === 'normal' ? 'عادية' : 'منخفضة')
+                        : `أولوية ${caseItem.priority}`}
                     </Badge>
                   </div>
                 </div>
