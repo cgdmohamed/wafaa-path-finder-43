@@ -106,14 +106,14 @@ const InitiativeDetail = () => {
 
   if (!initiative) {
     return (
-      <div className="min-h-screen">
+    <div className="min-h-screen" dir="rtl">
         <Header />
         <div className="container mx-auto px-4 py-20">
           <div className="text-center">
             <h1 className="text-4xl font-bold text-destructive mb-4">المبادرة غير موجودة</h1>
             <p className="text-muted-foreground mb-8">عذراً، لم نتمكن من العثور على المبادرة المطلوبة</p>
             <Button onClick={() => navigate("/")} variant="outline">
-              <ArrowLeft className="ml-2 h-4 w-4" />
+              <ArrowLeft className="mr-2 h-4 w-4" />
               العودة للصفحة الرئيسية
             </Button>
           </div>
@@ -124,7 +124,7 @@ const InitiativeDetail = () => {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" dir="rtl">
       <Header />
       
       <main className="py-20">
@@ -135,7 +135,7 @@ const InitiativeDetail = () => {
             onClick={() => navigate("/")}
             className="mb-6"
           >
-            <ArrowLeft className="ml-2 h-4 w-4" />
+            <ArrowLeft className="mr-2 h-4 w-4" />
             العودة للمبادرات
           </Button>
 
@@ -151,11 +151,11 @@ const InitiativeDetail = () => {
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                  <div className="absolute bottom-4 left-4 right-4">
+                  <div className="absolute bottom-4 right-4 left-4">
                     <Badge variant="secondary" className="mb-2">
                       {initiative.type}
                     </Badge>
-                    <h1 className="text-2xl md:text-3xl font-bold text-white">
+                    <h1 className="text-2xl md:text-3xl font-bold text-white text-right">
                       {initiative.title}
                     </h1>
                   </div>
@@ -180,7 +180,7 @@ const InitiativeDetail = () => {
                   <CardTitle>نبذة عن المبادرة</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground leading-relaxed">
+                  <p className="text-muted-foreground leading-relaxed text-right">
                     {initiative.description}
                   </p>
                 </CardContent>
@@ -197,7 +197,7 @@ const InitiativeDetail = () => {
                       {initiative.features.map((feature: string, index: number) => (
                         <div key={index} className="flex items-center gap-2">
                           <ArrowRight className="h-4 w-4 text-primary flex-shrink-0" />
-                          <span>{feature}</span>
+                          <span className="text-right">{feature}</span>
                         </div>
                       ))}
                     </div>
@@ -228,8 +228,8 @@ const InitiativeDetail = () => {
                     className="w-full"
                     size="lg"
                   >
+                    <ExternalLink className="ml-2 h-4 w-4" />
                     سجل الآن
-                    <ExternalLink className="mr-2 h-4 w-4" />
                   </Button>
                 </CardContent>
               </Card>
