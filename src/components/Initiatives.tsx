@@ -14,6 +14,7 @@ import {
   MapPin,
   ExternalLink
 } from 'lucide-react';
+import InitiativeRegistrationModal from './modals/InitiativeRegistrationModal';
 
 interface Initiative {
   id: string;
@@ -36,11 +37,15 @@ interface Initiative {
 
 const Initiatives = () => {
   const [initiatives, setInitiatives] = useState<Initiative[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEventsLoading, setIsEventsLoading] = useState(true);
+  const [modalType, setModalType] = useState<'volunteer' | 'suggest' | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchInitiatives();
+    fetchEvents();
   }, []);
 
   const fetchInitiatives = async () => {
@@ -63,6 +68,29 @@ const Initiatives = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchEvents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .eq('is_active', true)
+        .gte('event_date', new Date().toISOString().split('T')[0])
+        .order('event_date');
+
+      if (error) throw error;
+      setEvents(data || []);
+    } catch (error: any) {
+      console.error('Error fetching events:', error);
+      toast({
+        title: "خطأ في تحميل الفعاليات",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsEventsLoading(false);
     }
   };
 
@@ -105,26 +133,12 @@ const Initiatives = () => {
     }
   ];
 
-  const upcomingEvents = [
-    {
-      title: "ورشة الحقوق الأسرية",
-      date: "15 ديسمبر 2024",
-      location: "مقر الجمعية - الرياض",
-      type: "ورشة تدريبية"
-    },
-    {
-      title: "محاضرة حقوق المرأة في العمل",
-      date: "20 ديسمبر 2024",
-      location: "جامعة الأميرة نورة",
-      type: "محاضرة عامة"
-    },
-    {
-      title: "معرض الخدمات القانونية",
-      date: "25 ديسمبر 2024",
-      location: "مركز الرياض الدولي للمؤتمرات",
-      type: "معرض"
-    }
-  ];
+  const handleEventRegistration = (eventId: string) => {
+    toast({
+      title: "التسجيل في الفعالية",
+      description: "سيتم تفعيل نظام التسجيل قريباً"
+    });
+  };
 
   return (
     <section id="initiatives" className="py-20 bg-gradient-to-b from-secondary/10 to-background">
@@ -286,28 +300,67 @@ const Initiatives = () => {
         <div className="bg-gradient-to-r from-primary/5 via-secondary/10 to-accent/5 rounded-3xl p-8 lg:p-12">
           <h3 className="text-2xl font-bold text-center mb-8 text-primary">الفعاليات القادمة</h3>
           <div className="grid md:grid-cols-3 gap-6">
-            {upcomingEvents.map((event, index) => (
-              <Card key={index} className="border border-border/50 hover:shadow-lg transition-all">
-                <CardContent className="p-6">
-                  <Badge variant="outline" className="mb-3">{event.type}</Badge>
-                  <h4 className="text-lg font-semibold mb-3 text-right">{event.title}</h4>
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center justify-end gap-2">
-                      <span className="text-sm text-muted-foreground">{event.date}</span>
-                      <Calendar className="w-4 h-4 text-primary" />
+            {isEventsLoading ? (
+              Array.from({ length: 3 }).map((_, index) => (
+                <Card key={index} className="border border-border/50">
+                  <CardContent className="p-6">
+                    <div className="h-6 w-20 bg-muted rounded mb-3 animate-pulse"></div>
+                    <div className="h-6 w-full bg-muted rounded mb-3 animate-pulse"></div>
+                    <div className="space-y-2 mb-4">
+                      <div className="h-4 w-3/4 bg-muted rounded animate-pulse"></div>
+                      <div className="h-4 w-2/3 bg-muted rounded animate-pulse"></div>
                     </div>
-                    <div className="flex items-center justify-end gap-2">
-                      <span className="text-sm text-muted-foreground">{event.location}</span>
-                      <MapPin className="w-4 h-4 text-primary" />
+                    <div className="h-8 w-full bg-muted rounded animate-pulse"></div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : events.length > 0 ? (
+              events.map((event) => (
+                <Card key={event.id} className="border border-border/50 hover:shadow-lg transition-all">
+                  <CardContent className="p-6">
+                    <Badge variant="outline" className="mb-3">{event.event_type}</Badge>
+                    <h4 className="text-lg font-semibold mb-3 text-right">{event.title}</h4>
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(event.event_date).toLocaleDateString('ar')}
+                          {event.event_time && ` - ${event.event_time}`}
+                        </span>
+                        <Calendar className="w-4 h-4 text-primary" />
+                      </div>
+                      {event.location && (
+                        <div className="flex items-center justify-end gap-2">
+                          <span className="text-sm text-muted-foreground">{event.location}</span>
+                          <MapPin className="w-4 h-4 text-primary" />
+                        </div>
+                      )}
+                      {event.max_participants && (
+                        <div className="flex items-center justify-end gap-2">
+                          <span className="text-sm text-muted-foreground">
+                            {event.current_participants || 0} / {event.max_participants} مشارك
+                          </span>
+                          <Users className="w-4 h-4 text-primary" />
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <Button variant="outline" size="sm" className="w-full gap-2">
-                    <ExternalLink className="w-4 h-4" />
-                    سجل الآن
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full gap-2"
+                      onClick={() => handleEventRegistration(event.id)}
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      سجل الآن
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-8">
+                <Calendar className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">لا توجد فعاليات قادمة حالياً</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -318,17 +371,32 @@ const Initiatives = () => {
             كوني جزءاً من التغيير الإيجابي في المجتمع، شاركي في مبادراتنا أو اقترحي مبادرة جديدة
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-gradient-to-r from-primary to-primary-light gap-2">
+            <Button 
+              size="lg" 
+              className="bg-gradient-to-r from-primary to-primary-light gap-2"
+              onClick={() => setModalType('volunteer')}
+            >
               <Heart className="w-5 h-5" />
               تطوعي معنا
             </Button>
-            <Button variant="outline" size="lg" className="gap-2 border-primary hover:bg-primary hover:text-primary-foreground">
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="gap-2 border-primary hover:bg-primary hover:text-primary-foreground"
+              onClick={() => setModalType('suggest')}
+            >
               <Megaphone className="w-5 h-5" />
               اقترحي مبادرة
             </Button>
           </div>
         </div>
       </div>
+
+      <InitiativeRegistrationModal
+        isOpen={modalType !== null}
+        onClose={() => setModalType(null)}
+        type={modalType || 'volunteer'}
+      />
     </section>
   );
 };

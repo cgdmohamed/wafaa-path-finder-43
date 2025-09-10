@@ -311,6 +311,25 @@ const AdminDashboard = () => {
             </Button>
           </CardContent>
         </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              إدارة الخدمات والفعاليات
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              إدارة الخدمات السريعة والرئيسية والفعاليات القادمة
+            </p>
+            <Button variant="outline" className="w-full" asChild>
+              <Link to="/dashboard/admin/services">
+                فتح إدارة الخدمات
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

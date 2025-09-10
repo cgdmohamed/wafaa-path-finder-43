@@ -1,5 +1,9 @@
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Scale, 
   FileText, 
@@ -14,73 +18,67 @@ import {
   GraduationCap,
   Shield
 } from 'lucide-react';
+import ServiceRequestModal from './modals/ServiceRequestModal';
+
+interface Service {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  icon_name: string;
+  features?: string[];
+  price?: number;
+  duration_minutes?: number;
+}
 
 const Services = () => {
-  const quickServices = [
-    {
-      icon: Phone,
-      title: "اطلب استشارة",
-      description: "استشارة قانونية فورية مع محامية متخصصة",
-      color: "bg-primary/10 text-primary"
-    },
-    {
-      icon: FileText,
-      title: "قدم طلب دعم قانوني",
-      description: "احصل على دعم قانوني شامل لقضيتك",
-      color: "bg-secondary/20 text-primary"
-    },
-    {
-      icon: Users,
-      title: "احجز جلسة صلح",
-      description: "جلسات صلح مجتمعي متخصصة",
-      color: "bg-accent/20 text-primary"
-    },
-    {
-      icon: FileText,
-      title: "إعداد اللوائح والمذكرات",
-      description: "صياغة وإعداد المستندات القانونية",
-      color: "bg-primary/10 text-primary"
-    }
-  ];
+  const [quickServices, setQuickServices] = useState<Service[]>([]);
+  const [mainServices, setMainServices] = useState<Service[]>([]);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
-  const mainServices = [
-    {
-      icon: Scale,
-      title: "الاستشارات القانونية",
-      description: "استشارات متخصصة في جميع المجالات القانونية المتعلقة بالمرأة",
-      features: ["استشارات هاتفية", "استشارات مكتوبة", "استشارات عاجلة", "متابعة قانونية"]
-    },
-    {
-      icon: Gavel,
-      title: "الدعم في القضايا",
-      description: "مرافقة قانونية شاملة في جميع مراحل التقاضي",
-      features: ["تمثيل قانوني", "إعداد المرافعات", "متابعة الجلسات", "تنفيذ الأحكام"]
-    },
-    {
-      icon: Users,
-      title: "الصلح المجتمعي",
-      description: "حلول ودية للنزاعات الأسرية والمجتمعية",
-      features: ["وساطة متخصصة", "حلول شرعية", "اتفاقيات ملزمة", "متابعة التنفيذ"]
-    },
-    {
-      icon: Heart,
-      title: "الدعم النفسي والاجتماعي",
-      description: "مرافقة نفسية واجتماعية للمرأة في رحلتها القانونية",
-      features: ["جلسات دعم فردية", "مجموعات الدعم", "برامج التأهيل", "الإرشاد الأسري"]
-    },
-    {
-      icon: GraduationCap,
-      title: "التدريب والتأهيل",
-      description: "برامج تدريبية لتمكين المرأة قانونياً ومهنياً",
-      features: ["دورات قانونية", "ورش تخصصية", "شهادات معتمدة", "تدريب عملي"]
-    },
-    {
-      icon: BookOpen,
-      title: "التوعية القانونية",
-      description: "نشر الثقافة القانونية والوعي بالحقوق",
-      features: ["محاضرات توعوية", "مواد تثقيفية", "حملات مجتمعية", "الموسوعة القانونية"]
+  useEffect(() => {
+    fetchServices();
+  }, []);
+
+  const fetchServices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .eq('is_active', true)
+        .order('order_index');
+
+      if (error) throw error;
+
+      const services = data || [];
+      setQuickServices(services.filter(s => s.type === 'quick'));
+      setMainServices(services.filter(s => s.type === 'main'));
+    } catch (error: any) {
+      console.error('Error fetching services:', error);
+      toast({
+        title: "خطأ في تحميل الخدمات",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
+
+  const getIconComponent = (iconName: string) => {
+    const icons: any = {
+      Phone, FileText, Users, Scale, Gavel, Heart, GraduationCap, BookOpen, Shield
+    };
+    return icons[iconName] || FileText;
+  };
+
+  const handleServiceRequest = (service: Service) => {
+    setSelectedService(service);
+    setIsModalOpen(true);
+  };
 
   return (
     <section id="services" className="py-20 bg-background">
@@ -97,18 +95,44 @@ const Services = () => {
         <div className="mb-20">
           <h3 className="text-2xl font-bold text-center mb-8 text-primary">خدمات سريعة</h3>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {quickServices.map((service, index) => (
-              <Card key={index} className="hover:shadow-lg transition-all cursor-pointer border border-border/50">
-                <CardContent className="p-6 text-center">
-                  <div className={`w-16 h-16 ${service.color} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
-                    <service.icon className="w-8 h-8" />
-                  </div>
-                  <h4 className="text-lg font-semibold mb-2">{service.title}</h4>
-                  <p className="text-sm text-muted-foreground mb-4">{service.description}</p>
-                  <Button className="w-full">ابدأ الآن</Button>
-                </CardContent>
-              </Card>
-            ))}
+            {isLoading ? (
+              Array.from({ length: 4 }).map((_, index) => (
+                <Card key={index} className="border border-border/50">
+                  <CardContent className="p-6 text-center">
+                    <div className="w-16 h-16 bg-muted rounded-2xl mx-auto mb-4 animate-pulse"></div>
+                    <div className="h-6 w-24 bg-muted rounded mx-auto mb-2 animate-pulse"></div>
+                    <div className="h-4 w-full bg-muted rounded mb-4 animate-pulse"></div>
+                    <div className="h-10 w-full bg-muted rounded animate-pulse"></div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              quickServices.map((service, index) => {
+                const IconComponent = getIconComponent(service.icon_name);
+                return (
+                  <Card key={service.id} className="hover:shadow-lg transition-all cursor-pointer border border-border/50">
+                    <CardContent className="p-6 text-center">
+                      <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <IconComponent className="w-8 h-8" />
+                      </div>
+                      <h4 className="text-lg font-semibold mb-2">{service.title}</h4>
+                      <p className="text-sm text-muted-foreground mb-3">{service.description}</p>
+                      {service.price && (
+                        <Badge variant="secondary" className="mb-3">
+                          {service.price} ريال - {service.duration_minutes} دقيقة
+                        </Badge>
+                      )}
+                      <Button 
+                        className="w-full"
+                        onClick={() => handleServiceRequest(service)}
+                      >
+                        ابدأ الآن
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -116,32 +140,64 @@ const Services = () => {
         <div>
           <h3 className="text-2xl font-bold text-center mb-12 text-primary">خدماتنا الرئيسية</h3>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {mainServices.map((service, index) => (
-              <Card key={index} className="hover:shadow-xl transition-all border border-border/50">
-                <CardHeader className="pb-4">
-                  <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
-                    <service.icon className="w-7 h-7 text-primary" />
-                  </div>
-                  <CardTitle className="text-xl text-right">{service.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground mb-6 text-right leading-relaxed">
-                    {service.description}
-                  </p>
-                  <div className="space-y-2">
-                    {service.features.map((feature, featureIndex) => (
-                      <div key={featureIndex} className="flex items-center justify-end gap-2">
-                        <span className="text-sm text-muted-foreground">{feature}</span>
-                        <div className="w-2 h-2 bg-primary rounded-full"></div>
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, index) => (
+                <Card key={index} className="border border-border/50">
+                  <CardHeader className="pb-4">
+                    <div className="w-14 h-14 bg-muted rounded-xl mb-4 animate-pulse"></div>
+                    <div className="h-6 w-32 bg-muted rounded animate-pulse"></div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 mb-6">
+                      <div className="h-4 w-full bg-muted rounded animate-pulse"></div>
+                      <div className="h-4 w-3/4 bg-muted rounded animate-pulse"></div>
+                    </div>
+                    <div className="space-y-2 mb-6">
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="h-4 w-2/3 bg-muted rounded animate-pulse"></div>
+                      ))}
+                    </div>
+                    <div className="h-10 w-full bg-muted rounded animate-pulse"></div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              mainServices.map((service, index) => {
+                const IconComponent = getIconComponent(service.icon_name);
+                return (
+                  <Card key={service.id} className="hover:shadow-xl transition-all border border-border/50">
+                    <CardHeader className="pb-4">
+                      <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
+                        <IconComponent className="w-7 h-7 text-primary" />
                       </div>
-                    ))}
-                  </div>
-                  <Button variant="outline" className="w-full mt-6 hover:bg-primary hover:text-primary-foreground">
-                    تعرف على المزيد
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+                      <CardTitle className="text-xl text-right">{service.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground mb-6 text-right leading-relaxed">
+                        {service.description}
+                      </p>
+                      {service.features && (
+                        <div className="space-y-2">
+                          {service.features.map((feature, featureIndex) => (
+                            <div key={featureIndex} className="flex items-center justify-end gap-2">
+                              <span className="text-sm text-muted-foreground">{feature}</span>
+                              <div className="w-2 h-2 bg-primary rounded-full"></div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <Button 
+                        variant="outline" 
+                        className="w-full mt-6 hover:bg-primary hover:text-primary-foreground"
+                        onClick={() => handleServiceRequest(service)}
+                      >
+                        تعرف على المزيد
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -167,6 +223,12 @@ const Services = () => {
           </div>
         </div>
       </div>
+
+      <ServiceRequestModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        service={selectedService}
+      />
     </section>
   );
 };

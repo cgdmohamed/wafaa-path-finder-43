@@ -462,6 +462,101 @@ export type Database = {
           },
         ]
       }
+      events: {
+        Row: {
+          created_at: string
+          current_participants: number | null
+          description: string | null
+          event_date: string
+          event_time: string | null
+          event_type: string
+          id: string
+          is_active: boolean | null
+          location: string | null
+          max_participants: number | null
+          organizer_id: string | null
+          registration_link: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_participants?: number | null
+          description?: string | null
+          event_date: string
+          event_time?: string | null
+          event_type: string
+          id?: string
+          is_active?: boolean | null
+          location?: string | null
+          max_participants?: number | null
+          organizer_id?: string | null
+          registration_link?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_participants?: number | null
+          description?: string | null
+          event_date?: string
+          event_time?: string | null
+          event_type?: string
+          id?: string
+          is_active?: boolean | null
+          location?: string | null
+          max_participants?: number | null
+          organizer_id?: string | null
+          registration_link?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      initiative_registrations: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          initiative_id: string | null
+          message: string | null
+          name: string
+          phone: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          initiative_id?: string | null
+          message?: string | null
+          name: string
+          phone?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          initiative_id?: string | null
+          message?: string | null
+          name?: string
+          phone?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "initiative_registrations_initiative_id_fkey"
+            columns: ["initiative_id"]
+            isOneToOne: false
+            referencedRelation: "initiatives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       initiatives: {
         Row: {
           created_at: string
@@ -672,6 +767,107 @@ export type Database = {
           period_start?: string
           report_type?: string
           status?: string
+        }
+        Relationships: []
+      }
+      service_requests: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          email: string
+          id: string
+          message: string | null
+          name: string
+          phone: string | null
+          service_id: string | null
+          status: string | null
+          updated_at: string
+          urgency: string | null
+          user_id: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          message?: string | null
+          name: string
+          phone?: string | null
+          service_id?: string | null
+          status?: string | null
+          updated_at?: string
+          urgency?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string | null
+          name?: string
+          phone?: string | null
+          service_id?: string | null
+          status?: string | null
+          updated_at?: string
+          urgency?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_requests_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      services: {
+        Row: {
+          created_at: string
+          description: string
+          duration_minutes: number | null
+          features: string[] | null
+          icon_name: string
+          id: string
+          is_active: boolean | null
+          is_featured: boolean | null
+          order_index: number | null
+          price: number | null
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          duration_minutes?: number | null
+          features?: string[] | null
+          icon_name: string
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          order_index?: number | null
+          price?: number | null
+          title: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          duration_minutes?: number | null
+          features?: string[] | null
+          icon_name?: string
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          order_index?: number | null
+          price?: number | null
+          title?: string
+          type?: string
+          updated_at?: string
         }
         Relationships: []
       }
