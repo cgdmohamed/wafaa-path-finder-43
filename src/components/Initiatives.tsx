@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +37,7 @@ interface Initiative {
 }
 
 const Initiatives = () => {
+  const navigate = useNavigate();
   const [initiatives, setInitiatives] = useState<Initiative[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -147,19 +149,11 @@ const Initiatives = () => {
   };
 
   const handleInitiativeDetails = (initiativeId: string) => {
-    // Navigate to initiative detail page or open modal with more details
-    toast({
-      title: "تفاصيل المبادرة",
-      description: "سيتم إضافة صفحة تفاصيل المبادرة قريباً",
-    });
+    navigate(`/initiative/${initiativeId}`);
   };
 
   const handleStaticInitiativeDetails = (index: number) => {
-    // Handle static initiative details
-    toast({
-      title: "تفاصيل المبادرة",
-      description: "سيتم إضافة تفاصيل أكثر للمبادرة قريباً",
-    });
+    navigate(`/initiative/static-${index}`);
   };
 
   return (
